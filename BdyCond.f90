@@ -17,29 +17,57 @@
         v   = 0.0d0
 
         do j=1,Ny!B.C.@i=-1,0,Nx+1,Nx+2
+            !!!!! left terminal : Inflow !!!!!!!!!!!!!
             Q(0,j,1) = rho
             Q(0,j,2) = rho*u
             Q(0,j,3) = rho*v
             Q(0,j,4) = p/(1.4d0-1.0d0) + 0.5d0*(rho*(u**2 + v**2))
-            !write(*,*)j,Q(0,j,1),Q(0,j,2),Q(0,j,3),Q(0,j,4)
+            
             Q(-1,j,1) = rho
             Q(-1,j,2) = rho*u
             Q(-1,j,3) = rho*v
             Q(-1,j,4) = p/(1.4d0-1.0d0) + 0.5d0*(rho*(u**2 + v**2))
-            !write(*,*)j,Q(0,j,1),Q(0,j,2),Q(0,j,3),Q(0,j,4)
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            !!!!! left terminal : Reflection wall !!!!
+            !Q(0,j,1) = Q(1,j,1)
+            !Q(0,j,2) = -Q(1,j,2)
+            !Q(0,j,3) = Q(1,j,3)
+            !Q(0,j,4) = Q(1,j,4)
+
+            !Q(-1,j,1) = Q(2,j,1)
+            !Q(-1,j,2) = -Q(2,j,2)
+            !Q(-1,j,3) = Q(2,j,3)
+            !Q(-1,j,4) = Q(2,j,4)
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            !!!!! Right terminal : free OutFlow !!!!!!
             Q(Nx+1,j,1) = Q(Nx,j,1)
             Q(Nx+1,j,2) = Q(Nx,j,2)
             Q(Nx+1,j,3) = Q(Nx,j,3)
             Q(Nx+1,j,4) = Q(Nx,j,4)
-            !write(*,*)j,Q(Nx,j,1),Q(Nx,j,2),Q(Nx,j,3),Q(Nx,j,4)
+
             Q(Nx+2,j,1) = Q(Nx,j,1)
             Q(Nx+2,j,2) = Q(Nx,j,2)
             Q(Nx+2,j,3) = Q(Nx,j,3)
             Q(Nx+2,j,4) = Q(Nx,j,4)
-            !write(*,*)j,Q(Nx+2,j,1),Q(Nx+2,j,2),Q(Nx+2,j,3),Q(Nx+2,j,4)
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+            !!!!!!Right temrminal : Reflection wall !!!!!!!!!!
+            !Q(Nx+1,j,1) = Q(Nx,j,1)
+            !Q(Nx+1,j,2) = -Q(Nx,j,2)
+            !Q(Nx+1,j,3) = Q(Nx,j,3)
+            !Q(Nx+1,j,4) = Q(Nx,j,4)
+
+            !Q(Nx+2,j,1) = Q(Nx-1,j,1)
+            !Q(Nx+2,j,2) = -Q(Nx-1,j,2)
+            !Q(Nx+2,j,3) = Q(Nx-1,j,3)
+            !Q(Nx+2,j,4) = Q(Nx-1,j,4)
+            !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         enddo
 
         do i=-1,Nx+2!B.C.@j=-1,0,Ny+1,Ny+2
+            !SLIP CONDITION
             nxctr = 0.5d0*(n(i,0,1) + n(i,1,1))
             nyctr = 0.5d0*(n(i,0,2) + n(i,1,2))
             Un =  Q(i,1,2)/Q(i,1,1)*nxctr + Q(i,1,3)/Q(i,1,1)*nyctr

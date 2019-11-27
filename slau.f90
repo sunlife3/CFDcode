@@ -5,17 +5,17 @@ contains
     subroutine SLAU2_XFlux(Q,E,m,Nx,Ny)
         implicit none
         integer,intent(in) :: Nx,Ny
-        integer :: i=0,j=0,n=0
+        integer :: i=0,j=0,n=0,foo=0
         real(8),intent(in) :: Q(-1:Nx+2,-1:Ny+2,4),m(-2:Nx+3,-2:Ny+3,2)
         real(8),intent(out) :: E(-1:Nx+2,-1:Ny+2,4)
-        real(8),parameter :: phi = 1.0d0/3.0d0
-        real(8) rhoL,rhoR,rhoBar,UL,UR,VL,VR,pL,pR,HL,HR,cL,cR,cBar,MP,MM,MHat,VnL,VnR,&
-                absVnBar,chi,g,beta_P,beta_M,massFlow,Ptilde,&
+        real(8),parameter :: phi = 1.0d0/3.0d0,Csd1=0.10d0,Csd2=10.0d0
+        real(8) rhoL,rhoR,rhoBar,UL,UR,VL,VR,pL,pR,HL,HR,cL,cR,cBar,MP,MM,MHat,VnL,VnR,MBar,&
+                absVnBar,chi,g,beta_P,beta_M,massFlow,Ptilde,thetaSD,chiSD,p1,p2,p3,p4,p5,p6,dPmax,PBar,&
                 fluxLmtP,fluxlmtM,beta,deltaP,deltaM,hoge,fuga,&
                 mx,my,kx,ky,mmag,kmag,E1,E2,E3,E4
         
         n=n+1
-        beta = 0.5d0*(1.0d0 + (3.0d0-phi)/(1.0d0-phi))
+        beta = 1.0d0!0.5d0*(1.0d0 + (3.0d0-phi)/(1.0d0-phi))
         !do j=0,Ny
         !    do i=0,Nx
         !        write(*,*)i,j,Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
@@ -35,7 +35,9 @@ contains
                 my = my/mmag!my hat
                 kx = kx/kmag!kx hat
                 ky = ky/kmag!ky hat
-                !write(*,*)i,j,mx,my,kx,ky
+                !if(j<=1)then
+                ! write(*,*)i,j,mx,my,kx,ky
+                !endif
 
                 deltaP = Q(i+1,j,1) - Q(i,j,1)
                 deltaM = Q(i,j,1) - Q(i-1,j,1)
@@ -121,7 +123,19 @@ contains
                 !absVnBar_P = (1.0d0 - g)*absVnBar + g*abs(VnL)
                 !absVnBar_M = (1.0d0 - g)*absVnBar + g*abs(VnR)
                 MHat  = min(1.0d0,sqrt(0.5d0*(UL**2.0d0 + VL**2.0d0 + UR**2.0d0 + VR**2.0d0))/cBar)
-                chi = (1.0d0 - MHat)**2.0d0
+                
+                p1 = abs((GAMMA-1.0d0)*(Q(i,j+1,4) - 0.5d0*(Q(i,j+1,2)**2.0d0 + Q(i,j+1,3)**2.0d0)/Q(i,j+1,1)) - pL)
+                p2 = abs((GAMMA-1.0d0)*(Q(i-1,j,4) - 0.5d0*(Q(i-1,j,2)**2.0d0 + Q(i-1,j,3)**2.0d0)/Q(i-1,j,1)) - pL)
+                p3 = abs((GAMMA-1.0d0)*(Q(i,j-1,4) - 0.5d0*(Q(i,j-1,2)**2.0d0 + Q(i,j-1,3)**2.0d0)/Q(i,j-1,1)) - pL)
+                p4 = abs((GAMMA-1.0d0)*(Q(i+1,j-1,4) - 0.5d0*(Q(i+1,j-1,2)**2.0d0 + Q(i+1,j-1,3)**2.0d0)/Q(i+1,j-1,1)) - pR)
+                p5 = abs((GAMMA-1.0d0)*(Q(i+2,j,4) - 0.5d0*(Q(i+2,j,2)**2.0d0 + Q(i+2,j,3)**2.0d0)/Q(i+2,j,1)) - pR)
+                p6 = abs((GAMMA-1.0d0)*(Q(i+1,j+1,4) - 0.5d0*(Q(i+1,j+1,2)**2.0d0 + Q(i+1,j+1,3)**2.0d0)/Q(i+1,j+1,1)) - pR)
+                dPmax = max(p1,p2,p3,p4,p5,p6)
+                PBar = 0.5d0*(pL + pR)
+                MBar = ((rhoL*abs(UL) + rhoR*abs(UR))/(rhoL + rhoR))/cBar
+                thetaSD = min(1.0d0,((Csd2*(pR-pL) + Csd1*PBar)/(dPmax + Csd1*PBar))**2.0d0)*max(0.0d0,1.0d0 - abs(MBar))
+                chiSD   = 0.5d0*thetaSD*(abs(MBar + 1.0d0) + abs(MBar - 1.0d0) - 2.0d0*abs(MBar))!SD-SLAU
+                chi = (1.0d0 - MHat)**2.0d0                                                      !SLAU2
                 massFlow = 0.5d0*(rhoL*VnL + rhoR*VnR - absVnBar*(rhoR - rhoL))*(1.0d0 - g) - 0.5d0*chi*(pR - pL)/cBar
                 
                 if(1.0d0 <= abs(MP))then
@@ -139,7 +153,6 @@ contains
                 Ptilde = 0.5d0*(pL + pR) + 0.5d0*(beta_P - beta_M)*(pL - pR)&
                             + (beta_P + beta_M - 1.0d0)*sqrt(0.5d0*(UL**2.0d0 + VL**2.0d0 + UR**2.0d0 + VR**2.0d0))*rhoBar*cBar!SLAU2
                             !+ 0.5d0*(1.0d0 - chi)*(beta_P + beta_M - 1.0d0)*(pL+pR)                   !SLAU
-
 
                 E1 = massFlow
                 E2 = 0.5d0*(massFlow*(UR + UL) - abs(massFlow)*(UR - UL)) + Ptilde
@@ -162,13 +175,13 @@ contains
         integer :: i=0,j=0
         real(8),intent(in) :: Q(-1:Nxnum+2,-1:Nynum+2,4),n(-2:Nxnum+3,-2:Nynum+3,2)
         real(8),intent(out) :: F(-1:Nxnum+2,-1:Nynum+2,4)
-        real(8),parameter :: phi = 1.0d0/3.0d0
-        real(8) rhoL,rhoR,rhoBar,UL,UR,VL,VR,pL,pR,HL,HR,cL,cR,cBar,MP,MM,MHat,VnL,VnR,&
-                absVnBar,chi,g,beta_P,beta_M,massFlow,Ptilde,&
+        real(8),parameter :: phi = 1.0d0/3.0d0,Csd1=0.1d0,Csd2=10.0d0
+        real(8) rhoL,rhoR,rhoBar,UL,UR,VL,VR,pL,pR,HL,HR,cL,cR,cBar,MP,MM,MHat,VnL,VnR,MBar,&
+                absVnBar,chi,g,beta_P,beta_M,massFlow,Ptilde,thetaSD,chiSD,p1,p2,p3,p4,p5,p6,dPmax,PBar,&
                 fluxLmtP,fluxlmtM,beta,deltaP,deltaM,hoge,fuga,&
                 nx,ny,kx,ky,nmag,kmag,F1,F2,F3,F4
         
-        beta = 0.5d0*(1.0d0 + (3.0d0-phi)/(1.0d0-phi))
+        beta = 1.0d0!0.5d0*(1.0d0 + (3.0d0-phi)/(1.0d0-phi))
 
         do j=0,Nynum
             do i=0,Nxnum
@@ -183,7 +196,9 @@ contains
                 ny = ny/nmag!my hat
                 kx = kx/kmag!kx hat
                 ky = ky/kmag!ky hat
-                !write(*,*)i,j,mx,my,kx,ky
+                !if(j<=1)then
+                ! write(*,*)i,j,nx,ny,kx,ky
+                !endif
 
                 deltaP = Q(i,j+1,1) - Q(i,j,1)
                 deltaM = Q(i,j,1) - Q(i,j-1,1)
@@ -272,7 +287,20 @@ contains
                 !absVnBar_P = (1.0d0 - g)*absVnBar + g*abs(VnL)
                 !absVnBar_M = (1.0d0 - g)*absVnBar + g*abs(VnR)
                 MHat  = min(1.0d0,sqrt(0.5d0*(UL**2.0d0 + VL**2.0d0 + UR**2.0d0 + VR**2.0d0))/cBar)
-                chi = (1.0d0 - MHat)**2.0d0
+
+                p1 = abs((GAMMA-1.0d0)*(Q(i-1,j,4) - 0.5d0*(Q(i-1,j,2)**2.0d0 + Q(i-1,j,3)**2.0d0)/Q(i-1,j,1)) - pL)
+                p2 = abs((GAMMA-1.0d0)*(Q(i,j-1,4) - 0.5d0*(Q(i,j-1,2)**2.0d0 + Q(i,j-1,3)**2.0d0)/Q(i,j-1,1)) - pL)
+                p3 = abs((GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*(Q(i+1,j,2)**2.0d0 + Q(i+1,j,3)**2.0d0)/Q(i+1,j,1)) - pL)
+                p4 = abs((GAMMA-1.0d0)*(Q(i+1,j+1,4) - 0.5d0*(Q(i+1,j+1,2)**2.0d0 + Q(i+1,j+1,3)**2.0d0)/Q(i+1,j+1,1)) - pR)
+                p5 = abs((GAMMA-1.0d0)*(Q(i,j+2,4) - 0.5d0*(Q(i,j+2,2)**2.0d0 + Q(i,j+2,3)**2.0d0)/Q(i,j+2,1)) - pR)
+                p6 = abs((GAMMA-1.0d0)*(Q(i-1,j+1,4) - 0.5d0*(Q(i-1,j+1,2)**2.0d0 + Q(i-1,j+1,3)**2.0d0)/Q(i-1,j+1,1)) - pR)
+                dPmax = max(p1,p2,p3,p4,p5,p6)
+                PBar = 0.5d0*(pL + pR)
+                MBar = ((rhoL*abs(VL) + rhoR*abs(VR))/(rhoL + rhoR))/cBar
+                thetaSD = min(1.0d0,((Csd2*(pR-pL) + Csd1*PBar)/(dPmax + Csd1*PBar))**2.0d0)*max(0.0d0,1.0d0 - abs(MBar))
+                chiSD   = 0.5d0*thetaSD*(abs(MBar + 1.0d0) + abs(MBar - 1.0d0) - 2.0d0*abs(MBar))!SD-SLAU
+                chi = (1.0d0 - MHat)**2.0d0                                                      !SLAU2
+
                 massFlow = 0.5d0*(rhoL*VnL + rhoR*VnR - absVnBar*(rhoR - rhoL))*(1.0d0 - g) - 0.5d0*chi*(pR - pL)/cBar
                 
                 if(1.0d0 <= abs(MP))then
