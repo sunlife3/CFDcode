@@ -26,6 +26,7 @@ program visualize
         write(filename,'("Qbin_SD_duct5deg(M15,100)_",i1.1,".dat")')index
         !write(filename,'("Qbin_SD_ramp5deg(60)(M15,100)_",i1.1,".dat")')index
         !write(filename,'("QbinSD- Cylinder(M20,100)_",i3.3,".dat")')index
+        !write(filename,'("Qbin_SD_DoubleMach(M10,200)_",i1.1,".dat")')index!
         open(Qbin,file = filename)
         read(Qbin,*)meshfile
         write(*,*)meshfile
@@ -38,22 +39,15 @@ program visualize
         enddo
         close(Grid)
 
-        do j=-2,Ny+3
-            do i=-2,Nx+3
-                m(i,j,1) =  0.5d0*(0.5d0*(Y(i,j+1) - Y(i,j-1)) + 0.5d0*(Y(i+1,j+1) - Y(i+1,j-1))) 
-                m(i,j,2) = -0.5d0*(0.5d0*(X(i,j+1) - X(i,j-1)) + 0.5d0*(X(i+1,j+1) - X(i+1,j-1)))
-                n(i,j,1) = -0.5d0*(0.5d0*(Y(i+1,j) - Y(i-1,j)) + 0.5d0*(Y(i+1,j+1) - Y(i-1,j+1)))
-                n(i,j,2) =  0.5d0*(0.5d0*(X(i+1,j) - X(i-1,j)) + 0.5d0*(X(i+1,j+1) - X(i-1,j+1)))
-            enddo
-        enddo
-        
-        !open(77,file = 'MESH_GeneralCoord(100100).txt')
-        !do j=-3,Ny+4
-        !    do i=-3,Nx+4
-        !        read(77,*)X(i,j),Y(i,j)
+        !do j=-2,Ny+3
+        !    do i=-2,Nx+3
+        !        m(i,j,1) =  0.5d0*(0.5d0*(Y(i,j+1) - Y(i,j-1)) + 0.5d0*(Y(i+1,j+1) - Y(i+1,j-1))) 
+        !        m(i,j,2) = -0.5d0*(0.5d0*(X(i,j+1) - X(i,j-1)) + 0.5d0*(X(i+1,j+1) - X(i+1,j-1)))
+        !        n(i,j,1) = -0.5d0*(0.5d0*(Y(i+1,j) - Y(i-1,j)) + 0.5d0*(Y(i+1,j+1) - Y(i-1,j+1)))
+        !        n(i,j,2) =  0.5d0*(0.5d0*(X(i+1,j) - X(i-1,j)) + 0.5d0*(X(i+1,j+1) - X(i-1,j+1)))
         !    enddo
         !enddo
-        !close(77)
+        
 
         do index=1,1
             
@@ -71,6 +65,7 @@ program visualize
             write(filename,'("duct5deg_sd_M15(200100)_",i3.3,".vtk")')index
             !write(filename,'("Bow Shock_SD-AUSMDV M20_100_valid",i3.3,".vtk")')index
             !write(filename,'("Steady Normal Shock_SLAU2(1storder)_",i3.3,".vtk")')index
+            !write(filename,'("DoubleMach_60deg_sd_M10(200100)_",i3.3,".vtk")')index
             open(fo,file = filename)
             write(fo,"('# vtk DataFile Version 3.0')")
             write(fo,"('ramp')")
@@ -113,8 +108,8 @@ program visualize
                 enddo
             enddo
 
-            !write(fo,"('SCALARS V float')")
-            !write(fo,"('LOOKUP_TABLE default')")
+            write(fo,"('SCALARS V float')")
+            write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
                     rho = Q(i,j,1)
@@ -122,7 +117,7 @@ program visualize
                     v   = Q(i,j,3)/Q(i,j,1)
                     p   = (GAMMA-1.0d0)*(Q(i,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
                     t   = p/rho
-            !        write(fo,"(f10.7)")u*n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0) + &
+                    write(fo,"(f10.7)")v!u*n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0) + &
             !                           v*n(i,j,2)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0)!&
                                          !- (sqrt(GAMMA * p/rho)*sqrt((n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))**2.0d0 + &
                                          !                            (n(i,j,2)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))**2.0d0))
@@ -138,12 +133,12 @@ program visualize
                     v   = Q(i,j,3)/Q(i,j,1)
                     p   = (GAMMA-1.0d0)*(Q(i,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
                     t   = p/rho
-                    write(fo,"(f10.7)")sqrt(GAMMA*p/rho)
+                    !write(fo,"(f10.7)")sqrt(GAMMA*p/rho)
                     !write(*,*)'C',i,j,sqrt(GAMMA*p/rho)
                 enddo
             enddo
 
-            write(fo,"('SCALARS Entropy float')")
+            write(fo,"('SCALARS f(p) float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
@@ -159,7 +154,7 @@ program visualize
                     p2   = (GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*rho2*(u2**2.0d0 + v2**2.0d0))
                     t2   = p2/rho2
                     
-                    write(fo,"(f10.7)")log(t2/(rho2**(GAMMA-1.0d0))*(rho1**(GAMMA-1.0d0)/t1))
+                    write(fo,"(f10.7)")min(p2/p1,p1/p2)**3.0d0
                     !write(*,*)'C',i,j,sqrt(GAMMA*p/rho)
                 enddo
             enddo
@@ -177,19 +172,15 @@ program visualize
                 do i=1,Nx
                     mx = m(i-1,j,1)!/sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
                     my = m(i-1,j,2)!/sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
-
                     rho1 = Q(i-1,j,1)
                     u1   = Q(i-1,j,2)/Q(i-1,j,1)!(sqrt(Q(i,j,1))*uave1 + sqrt(Q(i-1,j,1))*uave2)/(sqrt(Q(i,j,1))+sqrt(Q(i-1,j,1)))
                     v1   = Q(i-1,j,3)/Q(i-1,j,1)!(sqrt(Q(i,j,1))*vave1 + sqrt(Q(i-1,j,1))*vave2)/(sqrt(Q(i,j,1))+sqrt(Q(i-1,j,1)))
                     theta1 = atan(v1/u1)
                     p1   = (GAMMA-1.0d0)*(Q(i-1,j,4) - 0.5d0*(Q(i-1,j,2)**2.0d0 + Q(i-1,j,3)**2.0d0)/Q(i-1,j,1))
                     t1   = p1/rho1
-                    !cL1 = sqrt(GAMMA*p1/rho1)*sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
                     cL1 = sqrt(GAMMA*p1/rho1)!*sqrt(mx**2.0d0 + my**2.0d0)
                     M1 = 20.0d0  
-                    !VnL = (u1*m(i-1,j,1) + v1*m(i-1,j,2))
                     VnL = u1*mx + v1*my
-                    !Vabs1 = sqrt(u1**2.0d0 + v1**2.0d0)
 
                     mx = m(i,j,1)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0)
                     my = m(i,j,2)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0)
@@ -200,39 +191,25 @@ program visualize
                     theta2 = atan(v2/u2)
                     p2   = (GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*(Q(i+1,j,2)**2.0d0 + Q(i+1,j,3)**2.0d0)/Q(i+1,j,1))
                     t2   = p2/rho2
-                    !cR1 = sqrt(GAMMA*p2/rho2)*sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0)
-                    cR1 = sqrt(GAMMA*p2/rho2)!*sqrt(mx**2.0d0 + my**2.0d0)
-                    !VnR = (u2*m(i,j,1) + v2*m(i,j,2))
-                    !VnR = u2*mx + v2*my
-                    !Vabs2 = sqrt(u2**2.0d0 + v2**2.0d0) 
-
-                    !if(i==47 .and. j==1)then
-                    !    do cnt=1,90
-                    !        VnL = u1*sin(1.0d0*cnt*PI/180.0d0) - v1*cos(1.0d0*cnt*PI/180.0d0)
-                    !        VnR = u2*sin(1.0d0*cnt*PI/180.0d0) - v2*cos(1.0d0*cnt*PI/180.0d0)
-                    !        write(*,*)cnt,VnL-cL1,u1,v1,VnR-cR1,u2,v2
-                    !    enddo
+                    cR1 = sqrt(GAMMA*p2/rho2)
+                    
+                    !if((u1 - cL1 > 0 .and. u2 - cR1 < 0) .or. (u1 + cL1 > 0 .and. u2 + cR1 <0))then
+                    !    Flag(i,j) = 1.0d0
                     !endif
 
                     prf(i,j) = (min(p1/p2,p2/p1))**3.0d0
+                    write(*,*)i,j,prf(i,j)
                     !Flag(i,j) = prf(i,j)
                     
-                    if(prf(i,j) < 0.5d0)then
-
-                        ! Shock Detection by Entropy
-                        !Entropy = log((t2/t1)**(GAMMA/(GAMMA-1.0d0))*((p1**rho1)/(p2**rho2)))
-                        !if(Entropy > 0.01d0)then
-                        !    !Flag(i,j) = 1.0d0
-                        !endif
-                        !Entropy = log((t1/t2)**(GAMMA/(GAMMA-1.0d0))*((p2**rho1)/(p1**rho1)))
-                        !if(Entropy > 0.0d0)then
-                        !    !Flag(i,j) = 1.0d0
-                        !endif
-
+                    if(prf(i,j) < 0.8d0)then
                         ! Shock Detection by velocity
+                        do l=1,Nx 
+                            p1   = (GAMMA-1.0d0)*(Q(l,j-1,4) - 0.5d0*(Q(l,j-1,2)**2.0d0 + Q(l,j-1,3)**2.0d0)/Q(l,j-1,1))
+                            p2   = (GAMMA-1.0d0)*(Q(l+1,j-1,4) - 0.5d0*(Q(l+1,j-1,2)**2.0d0 + Q(l+1,j-1,3)**2.0d0)/Q(l+1,j-1,1))
+                            prf(l,j-1) = (min(p1/p2,p2/p1))**3.0d0
 
-                        do l=1,Nx
-                            if(prf(l,j-1) < 0.6d0)then
+                            if(prf(l,j-1) < 0.8d0)then
+                                
                                 theta = atan((Y(i,j) - Y(l,j-1))/(X(i,j) - X(l,j-1)))
                                 
                                 if(theta < 0.0d0)then
@@ -245,12 +222,12 @@ program visualize
                                 
                                 if((VnL - cL1 > 0 .and. VnR - cR1 < 0) .or. (VnL + cL1 > 0 .and. VnR + cR1 <0))then
                                     if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then
-                                        Flag(i,j) = 0.0d0
+                                        !Flag(i,j) = 0.0d0
                                     else
                                         Flag(i,j) = 1.0d0
                                         !write(*,*)'True',i,j,theta*180/PI,VnL,cL1,VnR,cR1
-                                        write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
-                                        sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
+                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
+                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
                                     endif
                                 endif
                                 !write(*,*)i,j,theta*180.0d0/PI,Flag(i,j),VnL-cL1,VnR-cR1
@@ -261,28 +238,6 @@ program visualize
                         !Flag(i,j) = 1.0d0
                     endif
 
-                    
-                    theta = theta2 - theta1
-                    tantheta = tan(theta)
-
-                    !do cnt=-90,90
-                    !    betadeg = betadeg + 1.0d0
-                    !    beta = PI*betadeg/180.d0
-                    !    betadeg2 = betadeg2 + 1.0d0
-                    !    beta2 = PI*betadeg2/180.d0
-                    !    hoge = (M1**2.0d0*sin(beta)**2.0d0 - 1.0d0)/(M1**2.0d0*(GAMMA+cos(2.0d0*beta)+2.0d0))*(2.0d0/tan(beta))
-                    !    fuga = (M1**2.0d0*sin(beta2)**2.0d0 - 1.0d0)/(M1**2.0d0*(GAMMA+cos(2.0d0*beta2)+2.0d0))*(2.0d0/tan(beta2))
-                    !    if((hoge-tantheta)*(fuga-tantheta) < 0.0d0)then
-                    !        VnL = u1*sin(beta) - v1*cos(beta)
-                    !        VnR = u2*sin(beta) - v2*cos(beta)
-                    !        if((VnL-cL1>0.0d0 .and. VnR-cR1<0.0d0))then! .or. (VnL+cL1>0.0d0 .and. VnR+cR1<0.0d0))then
-                    !            write(*,*)i,j,cnt,atan(beta)*180.d0/PI
-                    !            Flag(i,j) = 1
-                    !        endif
-                    !    endif
-                    !enddo
-                    
-                    betadeg = 0.0d0
 
                     mx = n(i,j-1,1)/sqrt(n(i,j-1,1)**2.0d0 + n(i,j-1,2)**2.0d0)
                     my = n(i,j-1,2)/sqrt(n(i,j-1,1)**2.0d0 + n(i,j-1,2)**2.0d0)
@@ -312,25 +267,15 @@ program visualize
 
                     prf(i,j) = (min(p1/p2,p2/p1))**3.0d0
 
-                    if(prf(i,j) < 0.5d0)then
-
-                        !write(*,*)i,',',j,',',X(i,j),',',Y(i,j),',',180.0d0*atan((Y(i,j) - Y(iold,jold))/(X(i,j) - X(iold,jold)))/PI
-                        !iold = i
-                        !jold = j
-
-                        ! Shock Detection wave by Entropy
-                        !Entropy = log((t2/t1)**(GAMMA/(GAMMA-1.0d0))*((p1**rho1)/(p2**rho2)))
-                        !if(Entropy > 0.0d0)then
-                        !    !Flag(i,j) = 1.0d0
-                        !endif
-                        !Entropy = log((t1/t2)**(GAMMA/(GAMMA-1.0d0))*((p2**rho2)/(p1**rho1)))
-                        !if(Entropy > 0.0d0)then
-                        !    !Flag(i,j) = 1.0d0
-                        !endif
+                    if(prf(i,j) < 0.8d0)then
 
                         ! Shock Detection Wave by compare Vn
                         do l=1,Ny
-                            if(prf(i-1,l) < 0.5d0)then                                
+                            p1   = (GAMMA-1.0d0)*(Q(i-1,l-1,4) - 0.5d0*(Q(i-1,l-1,2)**2.0d0 + Q(i-1,l-1,3)**2.0d0)/Q(i-1,l-1,1))
+                            p2   = (GAMMA-1.0d0)*(Q(i-1,l+1,4) - 0.5d0*(Q(i-1,l+1,2)**2.0d0 + Q(i-1,l+1,3)**2.0d0)/Q(i-1,l+1,1))
+                            prf(i-1,l) = (min(p1/p2,p2/p1))**3.0d0
+                            
+                            if(prf(i-1,l) < 0.8d0)then
                                 theta = atan((Y(i,j) - Y(i-1,l))/(X(i,j) - X(i-1,l)))
                                 if(theta < 0.0d0)then
                                     VnL = -u1*sin(theta) + v1*cos(theta)
@@ -339,52 +284,49 @@ program visualize
                                     VnL = u1*sin(theta) - v1*cos(theta)
                                     VnR = u2*sin(theta) - v2*cos(theta)
                                 endif
-                            if((VnL - cL2 > 0 .and. VnR - cR2 < 0) .or. (VnL + cL2 > 0 .and. VnR + cR2 <0))then
-                                    !if(sqrt(u1**2.0d0 + v1**2.0d0) )
-                                    Flag(i,j) = 1.0d0
-                                    write(*,*)'et',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
-                                    sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
-
-                                    !write(*,*)X(i,j),',',Y(i,j),',',prf(i,j),',',theta*180.0d0/PI
+                            
+                                if(v1 < 0.0d0)then
+                                    if((VnL - cL2 > 0 .and. VnR - cR2 < 0) .or. (VnL + cL2 > 0 .and. VnR + cR2 <0))then
+                                        if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then
+                                            !Flag(i,j) = 0.0d0
+                                        else
+                                            Flag(i,j) = 1.0d0
+                                        !write(*,*)i,j,theta*180/PI,VnL,cL1,VnR,cR1
+                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
+                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
+                                        endif
+                                    endif
                                 else
-                                    !Flag(i,j) = 0.0d0
-                                    !write(*,*)'0',i,j,prf(i,j),theta*180.0d0/PI
+                                    if((VnR - cR2 > 0 .and. VnL - cL2 < 0) .or. (VnR + cR2 > 0 .and. VnL + cL2 <0))then
+                                        if(sqrt(u1**2.0d0 + v1**2.0d0) > sqrt(u2**2.0d0 + v2**2.0d0))then
+                                            !Flag(i,j) = 0.0d0
+                                        else
+                                            Flag(i,j) = 1.0d0
+                                        !write(*,*)i,j,theta*180/PI,VnL,cL1,VnR,cR1
+                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
+                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
+                                        endif
+                                        !Flag(i,j) = 1.0d0
+                                        !write(*,*)'True',i,j,theta*180/PI,VnL,cL1,VnR,cR1
+                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
+                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
+                                    endif
                                 endif
+                                
+                                !write(*,*)X(i,j),',',Y(i,j),',',prf(i,j),',',theta*180.0d0/PI
                             endif
                         enddo
                     else
                         !Flag(i,j) = 1.0d0
                     endif
-
-                    
-                
-
-                    !do cnt=-90,90
-                    !    betadeg = betadeg + 1.0d0
-                    !    beta = PI*betadeg/180.d0
-                    !    betadeg2 = betadeg2 + 1.0d0
-                    !    beta2 = PI*betadeg2/180.d0
-                    !    hoge = (M1**2.0d0*sin(beta)**2.0d0 - 1.0d0)/(M1**2.0d0*(GAMMA+cos(2.0d0*beta)+2.0d0))*(2.0d0/tan(beta))
-                    !    fuga = (M1**2.0d0*sin(beta2)**2.0d0 - 1.0d0)/(M1**2.0d0*(GAMMA+cos(2.0d0*beta2)+2.0d0))*(2.0d0/tan(beta2))
-                    !    if((hoge-tantheta)*(fuga-tantheta) < 0.0d0)then
-                    !        VnL = u1*sin(beta) - v1*cos(beta)
-                    !        VnR = u2*sin(beta) - v2*cos(beta)
-                    !        if((VnL-cL1>0.0d0 .and. VnR-cR1<0.0d0))then! .or. (VnL+cL1>0.0d0 .and. VnR+cR1<0.0d0))then
-                    !            !write(*,*)i,j,cnt,atan(beta)*180.d0/PI
-                    !            Flag(i,j) = 1
-                    !        endif
-                    !    endif
-                    !enddo
-                    
-                    beta = 0.0d0
                 enddo
             enddo
-            
+
             do j=1,Ny
                 do i=1,Nx
                     write(fo,"(f10.7)")Flag(i,j)
                 enddo
-            enddo  
+            enddo
             
             close(fo)
            
