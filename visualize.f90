@@ -11,26 +11,33 @@ program visualize
                     rho,u,v,p,t,mx,my,gradP,Vn(4),Vabs1,Vabs2,Entropy
         real(8),parameter :: GAMMA=1.4d0,PI=3.14159265359d0
 
-        open(GridNum,file = 'GridNum.txt')
-        read(GridNum,*)Nx,Ny
-        close(GridNum)
-        write(*,*)Nx,Ny
+        !open(GridNum,file = 'GridNum.txt')
+        !read(GridNum,*)Nx,Ny
+        !close(GridNum)
+        !write(*,*)Nx,Ny
 
-        allocate(X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4),Q(-1:Nx+2,-1:Ny+2,4),Flag(-1:Nx+2,-1:Ny+2),&
-                    m(-2:Nx+3,-2:Ny+3,2),n(-2:Nx+3,-2:Ny+3,2),prf(-1:Nx+2,-1:Ny+2))
         
         
+        do index=10,10
         !open(Grid,file = 'MESH_tube.txt')
-        !write(filename,'("QbinSLAU2_SteadyNormalShock(1storder)",i3.3,".dat")')index
+        !write(filename,'("QbinSLAU2 SNS(M20,Buff,3timesLT)_",i3.3,".dat")')index
         !write(filename,'("QbinSF-SD-SLAU(meshM5).dat")')
-        write(filename,'("Qbin_SD_duct5deg(M15,100)_",i1.1,".dat")')index
-        !write(filename,'("Qbin_SD_ramp5deg(60)(M15,100)_",i1.1,".dat")')index
-        !write(filename,'("QbinSD- Cylinder(M20,100)_",i3.3,".dat")')index
-        !write(filename,'("Qbin_SD_DoubleMach(M10,200)_",i1.1,".dat")')index!
+        !write(filename,'("Qbin_SD_duct5deg(M10,100)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_SLAU2_ramp5deg(M2,100)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_AUSMDV3rd_duct5deg(M10,100,2step)_",i1.1,".dat")')index
+        !write(filename,'("QbinHLL SNS(M2,b=25,e=10)_",i3.3,".dat")')index
+        !write(filename,'("Qbin HLL Cylinder(M10,100)_",i3.3,".dat")')index
+        !write(filename,'("Qbin_Exact_ramp5deg(M15,100)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_SD_DoubleMach(M5,200)_",i1.1,".dat")')index!
+        write(filename,'("Qbin_SWBLI(1000)_",i2.2,".dat")')index
         open(Qbin,file = filename)
         read(Qbin,*)meshfile
         write(*,*)meshfile
         open(Grid,file = meshfile)
+        read(Grid,*)Nx,Ny
+        write(*,*)Nx,Ny
+        allocate(X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4),Q(-1:Nx+2,-1:Ny+2,4),Flag(-1:Nx+2,-1:Ny+2),&
+                    m(-2:Nx+3,-2:Ny+3,2),n(-2:Nx+3,-2:Ny+3,2),prf(-1:Nx+2,-1:Ny+2))
 
         do j=-3,Ny+4
             do i=-3,Nx+4
@@ -48,8 +55,7 @@ program visualize
         !    enddo
         !enddo
         
-
-        do index=1,1
+        
             
             do j=-1,Ny+2
                 do i=-1,Nx+2
@@ -58,20 +64,21 @@ program visualize
                 enddo
             enddo
             close(Qbin)
-        
             !write(filename,'("BoundaryLayer",i3.3,".vtk")')index
             !open(fo,file = 'BoundaryLayer.vtk')
-            !write(filename,'("ramp5deg_sd_M15(5,60)(100)_",i3.3,".vtk")')index
-            write(filename,'("duct5deg_sd_M15(200100)_",i3.3,".vtk")')index
-            !write(filename,'("Bow Shock_SD-AUSMDV M20_100_valid",i3.3,".vtk")')index
-            !write(filename,'("Steady Normal Shock_SLAU2(1storder)_",i3.3,".vtk")')index
+            !write(filename,'("duct5deg_HLLAUSM_M10(100)_",i3.3,".vtk")')index
+            !write(filename,'("duct5deg_sd_M10(200100)_",i3.3,".vtk")')index
+            !write(filename,'("ramp5deg_SD-SLAU_M2_",i3.3,".vtk")')index
+            !write(filename,'("Bow Shock_HLL M20_100",i3.3,".vtk")')index
+            !write(filename,'("Steady Normal Shock_SLAU2(M20,Buff,3LT)_",i3.3,".vtk")')index
             !write(filename,'("DoubleMach_60deg_sd_M10(200100)_",i3.3,".vtk")')index
+            write(filename,'("Shock wave boundary layer interaction(1000)",i3.3,".vtk")')index
             open(fo,file = filename)
             write(fo,"('# vtk DataFile Version 3.0')")
             write(fo,"('ramp')")
             write(fo,"('ASCII')")
             write(fo,"('DATASET STRUCTURED_GRID')")
-            write(fo,"('DIMENSIONS',3(1x,i3))") Nx,Ny,1
+            write(fo,"('DIMENSIONS',3(1x,i4))") Nx,Ny,1
             write(fo,"('POINTS ',i9,' float')") Nx*Ny
 
             do j=1,Ny
@@ -83,12 +90,13 @@ program visualize
                 enddo
             enddo
 
-            write(fo,"('POINT_DATA',i9)")Nx*Ny
+            write(fo,"('POINT_DATA ',i9)") Nx*Ny
             write(fo,"('SCALARS rho float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
-                    write(fo,"(f10.7)")Q(i,j,1)
+                    write(fo,"(f10.6)")Q(i,j,1)
+                    
                 enddo
             enddo
 
@@ -124,7 +132,7 @@ program visualize
                 enddo
             enddo
 
-            write(fo,"('SCALARS C float')")
+            write(fo,"('SCALARS p float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
@@ -133,15 +141,21 @@ program visualize
                     v   = Q(i,j,3)/Q(i,j,1)
                     p   = (GAMMA-1.0d0)*(Q(i,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
                     t   = p/rho
-                    !write(fo,"(f10.7)")sqrt(GAMMA*p/rho)
+                    write(fo,"(f10.6)")p
                     !write(*,*)'C',i,j,sqrt(GAMMA*p/rho)
                 enddo
             enddo
 
-            write(fo,"('SCALARS f(p) float')")
+            write(fo,"('SCALARS f float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
+
+                    rho = Q(i-1,j,1)
+                    u   = Q(i-1,j,2)/Q(i-1,j,1)
+                    v   = Q(i-1,j,3)/Q(i-1,j,1)
+                    p   = (GAMMA-1.0d0)*(Q(i-1,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
+
                     rho1 = Q(i,j,1)
                     u1   = Q(i,j,2)/Q(i,j,1)
                     v1   = Q(i,j,3)/Q(i,j,1)
@@ -154,7 +168,8 @@ program visualize
                     p2   = (GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*rho2*(u2**2.0d0 + v2**2.0d0))
                     t2   = p2/rho2
                     
-                    write(fo,"(f10.7)")min(p2/p1,p1/p2)**3.0d0
+                    write(fo,"(f10.7)")min(p1/p2,p2/p1)**3.0d0
+                    !write(fo,"(f10.7)")min(p2/p1,p1/p2)**3.0d0
                     !write(*,*)'C',i,j,sqrt(GAMMA*p/rho)
                 enddo
             enddo
@@ -170,8 +185,8 @@ program visualize
             enddo
             do j=1,Ny
                 do i=1,Nx
-                    mx = m(i-1,j,1)!/sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
-                    my = m(i-1,j,2)!/sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
+                    mx = m(i-2,j,1)!/sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
+                    my = m(i-2,j,2)!/sqrt(m(i-1,j,1)**2.0d0 + m(i-1,j,2)**2.0d0)
                     rho1 = Q(i-1,j,1)
                     u1   = Q(i-1,j,2)/Q(i-1,j,1)!(sqrt(Q(i,j,1))*uave1 + sqrt(Q(i-1,j,1))*uave2)/(sqrt(Q(i,j,1))+sqrt(Q(i-1,j,1)))
                     v1   = Q(i-1,j,3)/Q(i-1,j,1)!(sqrt(Q(i,j,1))*vave1 + sqrt(Q(i-1,j,1))*vave2)/(sqrt(Q(i,j,1))+sqrt(Q(i-1,j,1)))
@@ -179,7 +194,6 @@ program visualize
                     p1   = (GAMMA-1.0d0)*(Q(i-1,j,4) - 0.5d0*(Q(i-1,j,2)**2.0d0 + Q(i-1,j,3)**2.0d0)/Q(i-1,j,1))
                     t1   = p1/rho1
                     cL1 = sqrt(GAMMA*p1/rho1)!*sqrt(mx**2.0d0 + my**2.0d0)
-                    M1 = 20.0d0  
                     VnL = u1*mx + v1*my
 
                     mx = m(i,j,1)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0)
@@ -198,20 +212,19 @@ program visualize
                     !endif
 
                     prf(i,j) = (min(p1/p2,p2/p1))**3.0d0
-                    write(*,*)i,j,prf(i,j)
+                    !write(*,*)i,j,prf(i,j)
                     !Flag(i,j) = prf(i,j)
                     
-                    if(prf(i,j) < 0.8d0)then
+                    if(prf(i,j) < 0.55d0)then
                         ! Shock Detection by velocity
                         do l=1,Nx 
-                            p1   = (GAMMA-1.0d0)*(Q(l,j-1,4) - 0.5d0*(Q(l,j-1,2)**2.0d0 + Q(l,j-1,3)**2.0d0)/Q(l,j-1,1))
-                            p2   = (GAMMA-1.0d0)*(Q(l+1,j-1,4) - 0.5d0*(Q(l+1,j-1,2)**2.0d0 + Q(l+1,j-1,3)**2.0d0)/Q(l+1,j-1,1))
-                            prf(l,j-1) = (min(p1/p2,p2/p1))**3.0d0
+                            p1   = (GAMMA-1.0d0)*(Q(l-1,j-2,4) - 0.5d0*(Q(l-1,j-2,2)**2.0d0 + Q(l-1,j-2,3)**2.0d0)/Q(l-1,j-2,1))
+                            p2   = (GAMMA-1.0d0)*(Q(l+1,j-2,4) - 0.5d0*(Q(l+1,j-2,2)**2.0d0 + Q(l+1,j-2,3)**2.0d0)/Q(l+1,j-2,1))
+                            prf(l,j-2) = (min(p1/p2,p2/p1))**3.0d0
 
-                            if(prf(l,j-1) < 0.8d0)then
+                            if(prf(l,j-2) < 0.55d0)then
                                 
-                                theta = atan((Y(i,j) - Y(l,j-1))/(X(i,j) - X(l,j-1)))
-                                
+                                theta = atan((Y(i,j) - Y(l,j-2))/(X(i,j) - X(l,j-2)))
                                 if(theta < 0.0d0)then
                                     VnL = -u1*sin(theta) + v1*cos(theta)
                                     VnR = -u2*sin(theta) + v2*cos(theta)
@@ -219,13 +232,16 @@ program visualize
                                     VnL = u1*sin(theta) - v1*cos(theta)
                                     VnR = u2*sin(theta) - v2*cos(theta)
                                 endif
-                                
+                                !if(13.0d0 < theta*180/PI .and. theta*180/PI < 17.0d0)then
+                                !    write(*,*)i,j,theta*180/PI,VnL-cL1,VnR-cR1,"! 1"
+                                !endif
                                 if((VnL - cL1 > 0 .and. VnR - cR1 < 0) .or. (VnL + cL1 > 0 .and. VnR + cR1 <0))then
+                                    !write(*,*)i,j,theta*180/PI,VnL-cL1,VnR-cR1,"! 1"
                                     if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then
                                         !Flag(i,j) = 0.0d0
                                     else
-                                        Flag(i,j) = 1.0d0
-                                        !write(*,*)'True',i,j,theta*180/PI,VnL,cL1,VnR,cR1
+                                        Flag(i,j) = 1.0d0                 
+                                        
                                         !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
                                         !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
                                     endif
@@ -237,7 +253,6 @@ program visualize
                         !Flag(i,j) = (min(p1/p2,p2/p1))**3.0d0
                         !Flag(i,j) = 1.0d0
                     endif
-
 
                     mx = n(i,j-1,1)/sqrt(n(i,j-1,1)**2.0d0 + n(i,j-1,2)**2.0d0)
                     my = n(i,j-1,2)/sqrt(n(i,j-1,1)**2.0d0 + n(i,j-1,2)**2.0d0)
@@ -267,16 +282,19 @@ program visualize
 
                     prf(i,j) = (min(p1/p2,p2/p1))**3.0d0
 
-                    if(prf(i,j) < 0.8d0)then
+                    if(prf(i,j) < 0.5d0)then
 
-                        ! Shock Detection Wave by compare Vn
+                        ! Shock Detection by compare Vn
                         do l=1,Ny
-                            p1   = (GAMMA-1.0d0)*(Q(i-1,l-1,4) - 0.5d0*(Q(i-1,l-1,2)**2.0d0 + Q(i-1,l-1,3)**2.0d0)/Q(i-1,l-1,1))
-                            p2   = (GAMMA-1.0d0)*(Q(i-1,l+1,4) - 0.5d0*(Q(i-1,l+1,2)**2.0d0 + Q(i-1,l+1,3)**2.0d0)/Q(i-1,l+1,1))
-                            prf(i-1,l) = (min(p1/p2,p2/p1))**3.0d0
+                            p1   = (GAMMA-1.0d0)*(Q(i-2,l-1,4) - 0.5d0*(Q(i-2,l-1,2)**2.0d0 + Q(i-2,l-1,3)**2.0d0)/Q(i-2,l-1,1))
+                            p2   = (GAMMA-1.0d0)*(Q(i-2,l+1,4) - 0.5d0*(Q(i-2,l+1,2)**2.0d0 + Q(i-2,l+1,3)**2.0d0)/Q(i-2,l+1,1))
+                            prf(i-2,l) = (min(p1/p2,p2/p1))**3.0d0
                             
-                            if(prf(i-1,l) < 0.8d0)then
-                                theta = atan((Y(i,j) - Y(i-1,l))/(X(i,j) - X(i-1,l)))
+                            if(prf(i-2,l) < 0.5d0)then
+                                theta = atan((Y(i,j) - Y(i-2,l))/(X(i,j) - X(i-2,l)))
+                                
+                                if(90.0d0*PI/180.0d0 < theta .or. theta < -90.0d0*PI/180.0d0)then
+                                endif
                                 if(theta < 0.0d0)then
                                     VnL = -u1*sin(theta) + v1*cos(theta)
                                     VnR = -u2*sin(theta) + v2*cos(theta)
@@ -284,40 +302,44 @@ program visualize
                                     VnL = u1*sin(theta) - v1*cos(theta)
                                     VnR = u2*sin(theta) - v2*cos(theta)
                                 endif
-                            
+                                
                                 if(v1 < 0.0d0)then
-                                    if((VnL - cL2 > 0 .and. VnR - cR2 < 0) .or. (VnL + cL2 > 0 .and. VnR + cR2 <0))then
-                                        if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then
+                                    if((VnL - cL2 > 0 .and. VnR - cR2 < 0) .or. (VnL + cL2 > 0 .and. VnR + cR2 <0))then!Compresible sonic point
+                                        if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then!NOT accerelation
                                             !Flag(i,j) = 0.0d0
                                         else
+                                            if(theta < 0.0d0)then 
                                             Flag(i,j) = 1.0d0
-                                        !write(*,*)i,j,theta*180/PI,VnL,cL1,VnR,cR1
-                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
-                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
+                                            endif
+                                            
+                                            !write(*,*)i,j,l,theta*180/PI,VnL,cL2,sqrt(u1**2.0d0 + v1**2.0d0),VnR,cR2,sqrt(u2**2.0d0 + v2**2.0d0)
+                                            !write(*,*)i,j,theta*180/PI,VnL,u1,v1,u2,v2,VnL,VnR
                                         endif
                                     endif
                                 else
-                                    if((VnR - cR2 > 0 .and. VnL - cL2 < 0) .or. (VnR + cR2 > 0 .and. VnL + cL2 <0))then
-                                        if(sqrt(u1**2.0d0 + v1**2.0d0) > sqrt(u2**2.0d0 + v2**2.0d0))then
+                                    !if(13.0d0 < theta*180/PI .and. theta*180/PI < 17.0d0)then
+                                    !    write(*,*)i,j,theta*180/PI,VnL-cL2,VnR-cR2,"! 3"
+                                    !endif
+                
+                                    if((VnR - cR2 > 0 .and. VnL - cL2 < 0) .or. (VnR + cR2 > 0 .and. VnL + cL2 <0))then!Compresible sonic point
+                                        
+                                        if(sqrt(u1**2.0d0 + v1**2.0d0) > sqrt(u2**2.0d0 + v2**2.0d0))then!NOT accerelation
                                             !Flag(i,j) = 0.0d0
                                         else
+                                            !if(theta > 0.0d0)then
                                             Flag(i,j) = 1.0d0
-                                        !write(*,*)i,j,theta*180/PI,VnL,cL1,VnR,cR1
-                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
-                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
+                                            !write(*,*)i,j,theta*180/PI,VnL,u1,v1,u2,v2,VnL,VnR
+                                            !endif
+                                            
+                                            !write(*,*)i,j,l,theta*180/PI,VnR,cR2,sqrt(u2**2.0d0 + v2**2.0d0),VnL,cL2,sqrt(u1**2.0d0 + v1**2.0d0)
                                         endif
-                                        !Flag(i,j) = 1.0d0
-                                        !write(*,*)'True',i,j,theta*180/PI,VnL,cL1,VnR,cR1
-                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
-                                        !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
                                     endif
-                                endif
-                                
+                                endif                        
                                 !write(*,*)X(i,j),',',Y(i,j),',',prf(i,j),',',theta*180.0d0/PI
                             endif
                         enddo
                     else
-                        !Flag(i,j) = 1.0d0
+                        
                     endif
                 enddo
             enddo
@@ -327,12 +349,10 @@ program visualize
                     write(fo,"(f10.7)")Flag(i,j)
                 enddo
             enddo
-            
             close(fo)
            
-
+            deallocate(X,Y,Q,Flag,m,n,prf)
         enddo
         
-            deallocate(X,Y)
             index = index + 1
 end program visualize

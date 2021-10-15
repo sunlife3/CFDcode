@@ -1,7 +1,7 @@
 subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
     implicit none
     integer,intent(in) :: Nxnum,Nynum
-    integer,parameter :: idxLeadEdge = 10,idxTrailEdge=110
+    integer,parameter :: idxLeadEdge = 1,idxTrailEdge=500
     integer :: i=0,j=0
     real(8),intent(in) :: Q(-1:Nxnum+2,-1:Nynum+2,4),S(-2:Nxnum+3,-2:Nynum+3),&
                             m(-2:Nxnum+3,-2:Nynum+3,2),n(-2:Nxnum+3,-2:Nynum+3,2)
@@ -12,6 +12,7 @@ subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
                 tauxx,tauxy,tauyy,uif,vif,Tif
     real(8) rho(-1:Nxnum+2,-1:Nynum+2),u(-1:Nxnum+2,-1:Nynum+2),v(-1:Nxnum+2,-1:Nynum+2),T(-1:Nxnum+2,-1:Nynum+2)
 
+    
     do j=-1,Nynum+2
         do i=-1,Nxnum+2
             rho(i,j) = Q(i,j,1)
@@ -22,15 +23,16 @@ subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
     enddo
 
 
-    do j=1,Nynum
+    do j=0,Nynum
         do i=0,Nxnum
-            if(j == 1 .and. idxLeadEdge-1 <= i)then
+            if(j == 1 .and. idxLeadEdge-1 <= i)then !if(j == 1)then!
             !viscous Flux at wall (j = 1)
                 !calculation ...xi,...eta
                 uxi = u(i+1,j) - u(i,j)
                 vxi = v(i+1,j) - v(i,j)
                 Txi = T(i+1,j) - T(i,j)
-                    
+
+                !ここのuをUにする    
                 uifp = (u(i+1,j+1)*sqrt(rho(i+1,j+1)) + u(i,j+1)*sqrt(rho(i,j+1)))/(sqrt(rho(i+1,j+1)) + sqrt(rho(i,j+1))) !uC  |    |C __j=2
                 uifm = (u(i+1,j)*sqrt(rho(i+1,j)) + u(i,j)*sqrt(rho(i,j)))/(sqrt(rho(i+1,j)) + sqrt(rho(i,j)))             !uB  |____|
                 ueta = (uifp + 3.0d0*uifm)/3.0d0                                                                           !    |    |B __j=1
@@ -39,14 +41,16 @@ subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
                 veta = (vifp + 3.0d0*vifm)/3.0d0                                                                           !    |wall|
                 Tifp = (T(i+1,j+1)*sqrt(rho(i+1,j+1)) + T(i,j+1)*sqrt(rho(i,j+1)))/(sqrt(rho(i+1,j+1)) + sqrt(rho(i,j+1))) !TC 
                 Tifm = (T(i+1,j)*sqrt(rho(i+1,j)) + T(i,j)*sqrt(rho(i,j)))/(sqrt(rho(i+1,j)) + sqrt(rho(i,j)))             !TB
-                Teta = 0.5d0*(Tifp - Tifm)  
+                Teta = 0.5d0*(Tifp - Tifm)
 
             else
                 !calculation ...xi,...eta
+                !ここのuをUにする
                 uxi = u(i+1,j) - u(i,j)
                 vxi = v(i+1,j) - v(i,j)
                 Txi = T(i+1,j) - T(i,j)
-            
+
+                !ここのuをUにする                
                 uifp = (u(i+1,j+1)*sqrt(rho(i+1,j+1)) + u(i,j+1)*sqrt(rho(i,j+1)))/(sqrt(rho(i+1,j+1)) + sqrt(rho(i,j+1)))
                 uifm = (u(i+1,j-1)*sqrt(rho(i+1,j-1)) + u(i,j-1)*sqrt(rho(i,j-1)))/(sqrt(rho(i+1,j-1)) + sqrt(rho(i,j-1)))
                 ueta = 0.5d0*(uifp - uifm)
@@ -55,7 +59,7 @@ subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
                 veta = 0.5d0*(vifp - vifm)
                 Tifp = (T(i+1,j+1)*sqrt(rho(i+1,j+1)) + T(i,j+1)*sqrt(rho(i,j+1)))/(sqrt(rho(i+1,j+1)) + sqrt(rho(i,j+1)))
                 Tifm = (T(i+1,j-1)*sqrt(rho(i+1,j-1)) + T(i,j-1)*sqrt(rho(i,j-1)))/(sqrt(rho(i+1,j-1)) + sqrt(rho(i,j-1)))
-                Teta = 0.5d0*(Tifp - Tifm)
+                Teta = 0.5d0*(Tifp - Tifm)                
             endif
 
             !calculation ...x,...y
@@ -85,9 +89,9 @@ subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
             Ev(i,j,3) = m(i,j,1)*tauxy + m(i,j,2)*tauyy
             Ev(i,j,4) = m(i,j,1)*(uif*tauxx + vif*tauxy + (GAMMA/(GAMMA-1.0d0)*mu/Pr*Tx))+&
                         m(i,j,2)*(uif*tauxy + vif*tauyy + (GAMMA/(GAMMA-1.0d0)*mu/Pr*Ty))
-            if(0<=j .and. j<=1)then
-                write(*,*)i,j,Ev(i,j,1)/5000.0d0,Ev(i,j,2)/5000.0d0,Ev(i,j,3)/5000.0d0,Ev(i,j,4)/5000.0d0
-            endif
+            !if(0<=j .and. j<=1)then
+            !    write(*,*)i,j,Ev(i,j,1)/5000.0d0,Ev(i,j,2)/5000.0d0,Ev(i,j,3)/5000.0d0,Ev(i,j,4)/5000.0d0
+            !endif
         enddo
     enddo
 
@@ -96,8 +100,8 @@ end subroutine XviscFlux
 subroutine YviscFlux(Q,Fv,m,n,S,Nxnum,Nynum)
     implicit none
     integer,intent(in) :: Nxnum,Nynum
-    integer :: i=0,j=0
-    integer,parameter :: idxLeadEdge = 10,idxTrailEdge=110
+    integer :: i=0,j=0,HOGE=0
+    integer,parameter :: idxLeadEdge = 1,idxTrailEdge=500
     real(8),intent(in) :: Q(-1:Nxnum+2,-1:Nynum+2,4),S(-2:Nxnum+3,-2:Nynum+3),&
                             m(-2:Nxnum+3,-2:Nynum+3,2),n(-2:Nxnum+3,-2:Nynum+3,2)
     real(8),intent(out) :: Fv(-1:Nxnum+2,-1:Nynum+2,4)
@@ -120,7 +124,7 @@ subroutine YviscFlux(Q,Fv,m,n,S,Nxnum,Nynum)
     enddo
 
     do j=0,Nynum
-        do i=1,Nxnum
+        do i=0,Nxnum
             if(j == 0)then
             !viscous Flux at wall(j = 0)
                 if(1<=i .and. i<=idxLeadEdge-2)then
