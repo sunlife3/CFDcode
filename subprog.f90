@@ -32,7 +32,7 @@ contains
         integer :: i=0,j=0,cnt,idxBndUpper=0,idxBndLower=0
         integer,intent(out) :: is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2)
         !real(8),intent(out) :: is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2)
-        real(8),intent(in) :: Q(-2:Nx+2,-2:Ny+2,4)
+        real(8),intent(in) :: Q(-2:Nx+3,-2:Ny+3,4)
         real(8) :: rho1,u1,v1,p1,t1,rho2,u2,v2,p2,t2,VnL,VnR,cL,cR,beta,f,f1,f2,g
         real(8),parameter :: PI=acos(-1.0d0)
 
@@ -87,72 +87,8 @@ contains
                         is_SF_eta(i,j-2) = 2
                         is_SF_eta(i,j+1) = 2
 
-                        !is_SF_xi(i+2,j) = 3
-                        !is_SF_xi(i-3,j) = 3
-                        !is_SF_xi(i,j+2) = 3
-                        !is_SF_xi(i-1,j+2) = 3
-                        !is_SF_xi(i,j-2) = 3
-                        !is_SF_xi(i-1,j-2) = 3
-                        !is_SF_eta(i+2,j) = 3
-                        !is_SF_eta(i+2,j-1) = 3
-                        !is_SF_eta(i-3,j) = 3
-                        !is_SF_eta(i-3,j-1) = 3
-                        !is_SF_eta(i,j+2) = 3
-                        !is_SF_eta(i,j-3) = 3
-
-
-                        !if(Nx < i + 2)then
-                        !    idxBndUpper = Nx
-                        !else
-                        !    idxBndUpper = i+2
-                        !endif
-                        !if(i - 2 < 0)then
-                        !    idxBndLower = 0
-                        !else
-                        !    idxBndLower = i-2
-                        !endif
-                        !do cnt=idxBndLower,idxBndUpper
-                        !    if(is_SF_xi(cnt,j) == 1)then
-                        !        is_SF_xi(cnt,j) = 1
-                        !    else
-                        !        is_SF_xi(cnt,j) = 2
-                        !    endif
-                        !    if(is_SF_eta(cnt,j) == 1)then
-                        !        is_SF_eta(cnt,j) = 1
-                        !    else
-                        !        is_SF_eta(cnt,j) = 2
-                        !    endif
-                        !enddo
-                        !if(Ny < j + 2)then
-                        !    idxBndUpper = Ny
-                        !else
-                        !    idxBndUpper = j+2
-                        !endif
-                        !if(j - 2 < 0)then
-                        !    idxBndLower = 0
-                        !else
-                        !    idxBndLower = j-2
-                        !endif
-                        !do cnt=idxBndLower,idxBndUpper
-                        !    if(is_SF_xi(i,cnt) == 1)then
-                        !        is_SF_xi(i,cnt) = 1
-                        !    else
-                        !        is_SF_xi(i,cnt) = 2
-                        !    endif
-                        !    if(is_SF_eta(i,cnt) == 1)then
-                        !        is_SF_eta(i,cnt) = 1
-                        !    else
-                        !        is_SF_eta(i,cnt) = 2
-                        !    endif
-                        !enddo
-                        !
                     else    
-                        !if(10 < i .and. i < 50 .and. j <20)then
-                        !    is_SF_xi(i,j) = 2     !
-                        !    is_SF_xi(i-1,j) = 2   !
-                        !    is_SF_eta(i,j) = 2    !
-                        !    is_SF_eta(i,j-1) = 2  !
-                        !endif
+
                     endif
             
             !!!!! detection direction Upside and Downside !!!!!
@@ -196,72 +132,10 @@ contains
                         is_SF_eta(i,j-2) = 2
                         is_SF_eta(i,j+1) = 2
                         
-                        !is_SF_xi(i+2,j) = 3
-                        !is_SF_xi(i-3,j) = 3
-                        !is_SF_xi(i,j+2) = 3
-                        !is_SF_xi(i-1,j+2) = 3
-                        !is_SF_xi(i,j-2) = 3
-                        !is_SF_xi(i-1,j-2) = 3
-                        !is_SF_eta(i+2,j) = 3
-                        !is_SF_eta(i+2,j-1) = 3
-                        !is_SF_eta(i-3,j) = 3
-                        !is_SF_eta(i-3,j-1) = 3
-                        !is_SF_eta(i,j+2) = 3
-                        !is_SF_eta(i,j-3) = 3
 
-                        !if(Nx < i + 2)then
-                        !    idxBndUpper = Nx
-                        !else
-                        !    idxBndUpper = i+2
-                        !endif
-                        !if(i - 2 < 0)then
-                        !    idxBndLower = -1
-                        !else
-                        !    idxBndLower = i-2
-                        !endif
-                        !do cnt=idxBndLower,idxBndUpper
-                        !    if(is_SF_xi(cnt,j) == 1)then
-                        !        is_SF_xi(cnt,j) = 1
-                        !    else
-                        !        is_SF_xi(cnt,j) = 2
-                        !    endif
-                        !    if(is_SF_eta(cnt,j) == 1)then
-                        !        is_SF_eta(cnt,j) = 1
-                        !    else
-                        !        is_SF_eta(cnt,j) = 2
-                        !    endif
-                        !    !write(*,*)cnt,j
-                        !enddo
-                        !if(Ny < j + 2)then
-                        !    idxBndUpper = Ny
-                        !else
-                        !    idxBndUpper = j+2
-                        !endif
-                        !if(j - 2 < 0)then
-                        !    idxBndLower = -1
-                        !else
-                        !    idxBndLower = j-2
-                        !endif
-                        !do cnt=idxBndLower,idxBndUpper
-                        !    if(is_SF_xi(i,cnt) == 1)then
-                        !        is_SF_xi(i,cnt) = 1
-                        !    else
-                        !        is_SF_xi(i,cnt) = 2
-                        !    endif
-                        !    if(is_SF_eta(i,cnt) == 1)then
-                        !        is_SF_eta(i,cnt) = 1
-                        !    else
-                        !        is_SF_eta(i,cnt) = 2
-                        !    endif
-                        !enddo
 
                     else    
-                        !if(10 < i .and. i < 50 .and. j < 20)then
-                        !    is_SF_xi(i,j) = 2     !
-                        !    is_SF_xi(i-1,j) = 2   !
-                        !    is_SF_eta(i,j) = 2    !
-                        !    is_SF_eta(i,j-1) = 2  !
-                        !endif
+  
                     endif
 
                 !enddo                           
@@ -299,7 +173,7 @@ contains
         integer :: i=0,j=0,l=0,cnt,idxBndUpper=0,idxBndLower=0
         integer,intent(out) :: is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2)
         !real(8),intent(out) :: is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2)
-        real(8),intent(in) :: Q(-2:Nx+2,-2:Ny+2,4),X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4)
+        real(8),intent(in) :: Q(-2:Nx+3,-2:Ny+3,4),X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4)
         real(8) :: rho1,u1,v1,p1,t1,rho2,u2,v2,p2,t2,VnL,VnR,cL,cR,beta,theta,f,f1,f2,g,mx,my
         real(8),allocatable :: prf(:,:)
         real(8),parameter :: PI=acos(-1.0d0)
@@ -455,7 +329,7 @@ endif
         implicit none
         integer,intent(in) :: Nx,Ny
         integer :: i=0,j=0
-        real(8),intent(in) ::Q(-2:Nx+2,-2:Ny+2,4),m(-2:Nx+3,-2:Ny+3,2),n(-2:Nx+3,-2:Ny+3,2),&
+        real(8),intent(in) ::Q(-2:Nx+3,-2:Ny+3,4),m(-2:Nx+3,-2:Ny+3,2),n(-2:Nx+3,-2:Ny+3,2),&
                              S(-2:Nx+3,-2:Ny+3)
         real(8) :: tmp=0,c=0,rho=0,p=0,u=0,v=0,U1=0,U2=0,Cxi=0,Ceta=0,CxiMax=0,CetaMax=0
         real(8) qmax

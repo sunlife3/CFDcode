@@ -5,14 +5,14 @@ contains
     subroutine HLL_XFlux(Q,E,m,Nx,Ny,i,j,b)
         implicit none
         integer,intent(in) :: i,j,Nx,Ny
-        integer :: n=0,foo=0
-        real(8),intent(in) :: Q(-2:Nx+2,-2:Ny+2,4),m(-2:Nx+3,-2:Ny+3,2),b
+        integer :: n=0,foo=0,k=1
+        real(8),intent(in) :: Q(-2:Nx+3,-2:Ny+3,4),m(-2:Nx+3,-2:Ny+3,2),b
         real(8),intent(out) :: E(-1:Nx+2,-1:Ny+2,4)
-        real(8),parameter :: phi = 1.0d0/3.0d0
+        real(8),parameter :: phi = 1.0d0/3.0d0, eps = 0.000001d0, CL1=1.0d0/16.0d0,CL2=10.0d0/16.0d0,CL3=5.0d0/16.0d0
         real(8) rhoL,rhoR,rhoBar,UL,u_l,UR,u_r,VL,v_l,VR,v_r,pL,pR,HL,HR,HBar,cL,cR,cBar,ubar,MHat,VnL,VnR,MBar,&
                 massFlow,PBar,fluxLmtP,fluxlmtM,beta,deltaP,deltaM,hoge,fuga,eL,eR,&
-                mx,my,kx,ky,mmag,kmag,E1,E2,E3,E4,SL,SR,Sast,hast,past,Uast(4),phiL,phiR,epsiron(4)
-        
+                mx,my,kx,ky,mmag,kmag,E1,E2,E3,E4,SL,SR,Sast,hast,past,Uast(4),phiL,phiR,epsiron(4),&
+                f_(3),s_(3),IS(3),bWCNS(3),omega(3),qtilde(3),h,qtmp
         n=n+1
         
         beta = b!0.5d0*(3.0d0 - phi)/(1.0d0 - phi)
@@ -29,57 +29,107 @@ contains
         kx = kx/kmag!kx hat
         ky = ky/kmag!ky hat
 
+        !!!!!!!! WCNS !!!!!!!
+        !do k =1,4
+        !    f_(1) = 0.5d0*(Q(i,j-2,k) - 4.0d0*Q(i,j-1,k) + 3.0d0*Q(i,j,k))
+        !    f_(2) = 0.5d0*(Q(i,j+1,k) - Q(i,j-1,k))
+        !    f_(3) = 0.5d0*(-3.0d0*Q(i,j,k) + 4.0d0*Q(i,j+1,k) - Q(i,j+2,k))
+        !    s_(1) = (Q(i,j-2,k) - 2.0d0*Q(i,j-1,k) + Q(i,j,k))
+        !    s_(2) = (Q(i,j-1,k) - 2.0d0*Q(i,j,k)   + Q(i,j+1,k))
+        !    s_(3) = (Q(i,j,k)   - 2.0d0*Q(i,j+1,k) + Q(i,j+2,k))
+        !    IS(1) = f_(1)**2.0d0 + s_(1)**2.0d0
+        !    IS(2) = f_(2)**2.0d0 + s_(2)**2.0d0
+        !    IS(3) = f_(3)**2.0d0 + s_(3)**2.0d0
+        !    bWCNS(1) = CL1/((eps + IS(1))**2.0d0)
+        !    bWCNS(2) = CL2/((eps + IS(2))**2.0d0)
+        !    bWCNS(3) = CL3/((eps + IS(3))**2.0d0)
+        !    omega(1) = bWCNS(1)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(2) = bWCNS(2)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(3) = bWCNS(3)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    qtilde(1) = Q(i,j,k) + 0.5d0*f_(1) + 0.125d0*s_(1)
+        !    qtilde(2) = Q(i,j,k) + 0.5d0*f_(2) + 0.125d0*s_(2)
+        !    qtilde(3) = Q(i,j,k) + 0.5d0*f_(3) + 0.125d0*s_(3)
+        !    if(k == 1)then
+        !        rhoL = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !    else if(k == 2)then
+        !        u_l = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoL
+        !    else if(k == 3)then
+        !        v_l = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoL
+        !    else if(k == 4)then
+        !        qtmp = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !        pL = (GAMMA - 1.0d0)*(qtmp - 0.5d0*rhoL*(u_l**2.0d0 + v_l**2.0d0))
+        !    endif
+        !    f_(1) = 0.5d0*(Q(i,j-1,k) - 4.0d0*Q(i,j,k) + 3.0d0*Q(i,j+1,k))
+        !    f_(2) = 0.5d0*(Q(i,j+2,k) - Q(i,j,k))
+        !    f_(3) = 0.5d0*(-3.0d0*Q(i,j+1,k) + 4.0d0*Q(i,j+2,k) - Q(i,j+3,k))
+        !    s_(1) = (Q(i,j-1,k) - 2.0d0*Q(i,j,k)   + Q(i,j+1,k))
+        !    s_(2) = (Q(i,j,k)   - 2.0d0*Q(i,j+1,k) + Q(i,j+2,k))
+        !    s_(3) = (Q(i,j+1,k) - 2.0d0*Q(i,j+2,k) + Q(i,j+3,k))
+        !    IS(1) = f_(1)**2.0d0 + s_(1)**2.0d0
+        !    IS(2) = f_(2)**2.0d0 + s_(2)**2.0d0
+        !    IS(3) = f_(3)**2.0d0 + s_(3)**2.0d0
+        !    bWCNS(1) = CL3/((eps + IS(1))**2.0d0)
+        !    bWCNS(2) = CL2/((eps + IS(2))**2.0d0)
+        !    bWCNS(3) = CL1/((eps + IS(3))**2.0d0)
+        !    omega(1) = bWCNS(1)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(2) = bWCNS(2)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(3) = bWCNS(3)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    qtilde(1) = Q(i,j+1,k) - 0.5d0*f_(1) + 0.125d0*s_(1)
+        !    qtilde(2) = Q(i,j+1,k) - 0.5d0*f_(2) + 0.125d0*s_(2)
+        !    qtilde(3) = Q(i,j+1,k) - 0.5d0*f_(3) + 0.125d0*s_(3)
+        !    if(k == 1)then
+        !        rhoR = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !    else if(k == 2)then
+        !        u_r = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoR
+        !    else if(k == 3)then
+        !        v_r = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoR
+        !    else if(k == 4)then
+        !        qtmp = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !        pR = (GAMMA - 1.0d0)*(qtmp - 0.5d0*rhoR*(u_r**2.0d0 + v_r**2.0d0))
+        !    endif
+        !enddo
 
+        !!!!! MUSCL !!!
         deltaP = Q(i+1,j,1) - Q(i,j,1)
         deltaM = Q(i,j,1) - Q(i-1,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         rhoL = Q(i,j,1) + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP
-
+        !
         deltaP = Q(i+2,j,1) - Q(i+1,j,1)
         deltaM = Q(i+1,j,1) - Q(i,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         rhoR = Q(i+1,j,1) - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
-
-        rhoBar = 0.5d0*(rhoL + rhoR)
-
+        !
         u_l = Q(i,j,2)/Q(i,j,1)
         deltaP = Q(i+1,j,2)/Q(i+1,j,1) - Q(i,j,2)/Q(i,j,1) 
         deltaM = Q(i,j,2)/Q(i,j,1) - Q(i-1,j,2)/Q(i-1,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)            
         u_l   = u_l + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP
-
+        !
         v_l = Q(i,j,3)/Q(i,j,1)
         deltaP = Q(i+1,j,3)/Q(i+1,j,1) - Q(i,j,3)/Q(i,j,1)
         deltaM = Q(i,j,3)/Q(i,j,1) - Q(i-1,j,3)/Q(i-1,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         v_l   = v_l + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP
-
+        !
         u_r = Q(i+1,j,2)/Q(i+1,j,1)                
         deltaP = Q(i+2,j,2)/Q(i+2,j,1) - Q(i+1,j,2)/Q(i+1,j,1)
         deltaM = Q(i+1,j,2)/Q(i+1,j,1) - Q(i,j,2)/Q(i,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)            
         u_r   = u_r - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
-
+        !
         v_r = Q(i+1,j,3)/Q(i+1,j,1)
         deltaP = Q(i+2,j,3)/Q(i+2,j,1) - Q(i+1,j,3)/Q(i+1,j,1)
         deltaM = Q(i+1,j,3)/Q(i+1,j,1) - Q(i,j,3)/Q(i,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         v_r = v_r - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
-        
-        UL = u_l*mx + v_l*my
-        UR = u_r*mx + v_r*my
-        VL = u_l*kx + v_l*ky
-        VR = u_r*kx + v_r*ky
-
-        VnL  = UL
-        VnR  = UR
-
+        !
         hoge   = (GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*(Q(i+1,j,2)**2.0d0 + Q(i+1,j,3)**2.0d0)/Q(i+1,j,1))
         pL     = (GAMMA-1.0d0)*(Q(i,j,4)   - 0.5d0*(Q(i,j,2)**2.0d0 + Q(i,j,3)**2.0d0)/Q(i,j,1))
         fuga   = (GAMMA-1.0d0)*(Q(i-1,j,4) - 0.5d0*(Q(i-1,j,2)**2.0d0 + Q(i-1,j,3)**2.0d0)/Q(i-1,j,1))
@@ -88,7 +138,7 @@ contains
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)            
         pL   = pL + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP
-        
+        !
         hoge   = (GAMMA-1.0d0)*(Q(i+2,j,4) - 0.5d0*(Q(i+2,j,2)**2.0d0 + Q(i+2,j,3)**2.0d0)/Q(i+2,j,1))
         pR     = (GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*(Q(i+1,j,2)**2.0d0 + Q(i+1,j,3)**2.0d0)/Q(i+1,j,1))
         fuga   = (GAMMA-1.0d0)*(Q(i,j,4)   - 0.5d0*(Q(i,j,2)**2.0d0 + Q(i,j,3)**2.0d0)/Q(i,j,1))
@@ -98,6 +148,14 @@ contains
         fluxLmtM = minmod(deltaM,beta*deltaP)                
         pR   = pR - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
 
+        rhoBar = 0.5d0*(rhoL + rhoR)
+        UL = u_l*mx + v_l*my
+        UR = u_r*mx + v_r*my
+        VL = u_l*kx + v_l*ky
+        VR = u_r*kx + v_r*ky
+
+        VnL  = UL
+        VnR  = UR
         HL   = (GAMMA*pL/(GAMMA-1.0d0) + 0.5d0*rhoL*(UL**2.0d0 + VL**2.0d0))/rhoL
         HR   = (GAMMA*pR/(GAMMA-1.0d0) + 0.5d0*rhoR*(UR**2.0d0 + VR**2.0d0))/rhoR
         cL   = sqrt(GAMMA*pL/rhoL)
@@ -172,7 +230,7 @@ contains
         !    E3 = rhoR*UR*VR
         !    E4 = (eR + pR)*UR
         !endif
-!       
+        !!       
         !epsiron(1) = 0.5d0*(SR + SL)/(SR - SL)*(rhoL*UL - rhoR*UR) - &
         !                 SL*SR/(SR - SL)*(rhoL - rhoR)
         !epsiron(2) = 0.5d0*(SR + SL)/(SR - SL)*((rhoL*UL**2.0d0 + pL) - (rhoR*UR**2.0d0 + pR)) - &
@@ -199,13 +257,14 @@ contains
     subroutine HLL_YFlux(Q,F,n,Nxnum,Nynum,i,j,b)
         implicit none
         integer,intent(in) :: i,j,Nxnum,Nynum
-        integer :: iter = 0
-        real(8),intent(in) :: Q(-2:Nxnum+2,-2:Nynum+2,4),n(-2:Nxnum+3,-2:Nynum+3,2),b
+        integer :: iter = 0, k=0
+        real(8),intent(in) :: Q(-2:Nxnum+3,-2:Nynum+3,4),n(-2:Nxnum+3,-2:Nynum+3,2),b
         real(8),intent(out) :: F(-1:Nxnum+2,-1:Nynum+2,4)
-        real(8),parameter :: phi = 1.0d0/3.0d0,Csd1=0.1d0,Csd2=10.0d0
+        real(8),parameter :: phi = 1.0d0/3.0d0,CL1=1.0d0/16.0d0,CL2=10.0d0/16.0d0,CL3=5.0d0/16.0d0,eps=0.000001d0
         real(8) rhoL,rhoR,rhoBar,UL,u_l,UR,u_r,VL,v_l,VR,v_r,pL,pR,HL,HR,HBar,cL,cR,cBar,ubar,VnL,VnR,&
                 massFlow,fluxLmtP,fluxlmtM,beta,deltaP,deltaM,hoge,fuga,eL,eR,&
-                nx,ny,kx,ky,nmag,kmag,F1,F2,F3,F4,SL,SR,Sast,past,Uast(4),epsiron(4)
+                nx,ny,kx,ky,nmag,kmag,F1,F2,F3,F4,SL,SR,Sast,past,Uast(4),epsiron(4),&
+                f_(3),s_(3),IS(3),bWCNS(3),omega(3),qtilde(3),h,qtmp
 
         beta = b!0.5d0*(3.0d0 - phi)/(1.0d0 - phi)
 
@@ -221,58 +280,107 @@ contains
         kx = kx/kmag!kx hat
         ky = ky/kmag!ky hat
 
+        !!!!!!!!! WCNS
+        !do k =1,4
+        !    f_(1) = 0.5d0*(Q(i,j-2,k) - 4.0d0*Q(i,j-1,k) + 3.0d0*Q(i,j,k))
+        !    f_(2) = 0.5d0*(Q(i,j+1,k) - Q(i,j-1,k))
+        !    f_(3) = 0.5d0*(-3.0d0*Q(i,j,k) + 4.0d0*Q(i,j+1,k) - Q(i,j+2,k))
+        !    s_(1) = (Q(i,j-2,k) - 2.0d0*Q(i,j-1,k) + Q(i,j,k))
+        !    s_(2) = (Q(i,j-1,k) - 2.0d0*Q(i,j,k)   + Q(i,j+1,k))
+        !    s_(3) = (Q(i,j,k)   - 2.0d0*Q(i,j+1,k) + Q(i,j+2,k))
+        !    IS(1) = f_(1)**2.0d0 + s_(1)**2.0d0
+        !    IS(2) = f_(2)**2.0d0 + s_(2)**2.0d0
+        !    IS(3) = f_(3)**2.0d0 + s_(3)**2.0d0
+        !    bWCNS(1) = CL1/((eps + IS(1))**2.0d0)
+        !    bWCNS(2) = CL2/((eps + IS(2))**2.0d0)
+        !    bWCNS(3) = CL3/((eps + IS(3))**2.0d0)
+        !    omega(1) = bWCNS(1)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(2) = bWCNS(2)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(3) = bWCNS(3)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    qtilde(1) = Q(i,j,k) + 0.5d0*f_(1) + 0.125d0*s_(1)
+        !    qtilde(2) = Q(i,j,k) + 0.5d0*f_(2) + 0.125d0*s_(2)
+        !    qtilde(3) = Q(i,j,k) + 0.5d0*f_(3) + 0.125d0*s_(3)
+        !    if(k == 1)then
+        !        rhoL = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !    else if(k == 2)then
+        !        u_l = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoL
+        !    else if(k == 3)then
+        !        v_l = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoL
+        !    else if(k == 4)then
+        !        qtmp = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !        pL = (GAMMA - 1.0d0)*(qtmp - 0.5d0*rhoL*(u_l**2.0d0 + v_l**2.0d0))
+        !    endif
+        !    f_(1) = 0.5d0*(Q(i,j-1,k) - 4.0d0*Q(i,j,k) + 3.0d0*Q(i,j+1,k))
+        !    f_(2) = 0.5d0*(Q(i,j+2,k) - Q(i,j,k))
+        !    f_(3) = 0.5d0*(-3.0d0*Q(i,j+1,k) + 4.0d0*Q(i,j+2,k) - Q(i,j+3,k))
+        !    s_(1) = (Q(i,j-1,k) - 2.0d0*Q(i,j,k)   + Q(i,j+1,k))
+        !    s_(2) = (Q(i,j,k)   - 2.0d0*Q(i,j+1,k) + Q(i,j+2,k))
+        !    s_(3) = (Q(i,j+1,k) - 2.0d0*Q(i,j+2,k) + Q(i,j+3,k))
+        !    IS(1) = f_(1)**2.0d0 + s_(1)**2.0d0
+        !    IS(2) = f_(2)**2.0d0 + s_(2)**2.0d0
+        !    IS(3) = f_(3)**2.0d0 + s_(3)**2.0d0
+        !    bWCNS(1) = CL3/((eps + IS(1))**2.0d0)
+        !    bWCNS(2) = CL2/((eps + IS(2))**2.0d0)
+        !    bWCNS(3) = CL1/((eps + IS(3))**2.0d0)
+        !    omega(1) = bWCNS(1)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(2) = bWCNS(2)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    omega(3) = bWCNS(3)/(bWCNS(1) + bWCNS(2) + bWCNS(3))
+        !    qtilde(1) = Q(i,j+1,k) - 0.5d0*f_(1) + 0.125d0*s_(1)
+        !    qtilde(2) = Q(i,j+1,k) - 0.5d0*f_(2) + 0.125d0*s_(2)
+        !    qtilde(3) = Q(i,j+1,k) - 0.5d0*f_(3) + 0.125d0*s_(3)
+        !    if(k == 1)then
+        !        rhoR = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !    else if(k == 2)then
+        !        u_r = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoR
+        !    else if(k == 3)then
+        !        v_r = (qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3))/rhoR
+        !    else if(k == 4)then
+        !        qtmp = qtilde(1)*omega(1) + qtilde(2)*omega(2) + qtilde(3)*omega(3)
+        !        pR = (GAMMA - 1.0d0)*(qtmp - 0.5d0*rhoR*(u_r**2.0d0 + v_r**2.0d0))
+        !    endif
+        !enddo
+
+        !!!!! MUSCL
         deltaP = Q(i,j+1,1) - Q(i,j,1)
         deltaM = Q(i,j,1) - Q(i,j-1,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         rhoL = Q(i,j,1) + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP
-
+        !
         deltaP = Q(i,j+2,1) - Q(i,j+1,1)
         deltaM = Q(i,j+1,1) - Q(i,j,1)
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         rhoR = Q(i,j+1,1) - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
-
-        rhoBar = 0.5d0*(rhoL + rhoR)
-
+        !
         u_l   = Q(i,j,2)/Q(i,j,1)
         deltaP = Q(i,j+1,2)/Q(i,j+1,1) - Q(i,j,2)/Q(i,j,1)
         deltaM = Q(i,j,2)/Q(i,j,1) - Q(i,j-1,2)/Q(i,j-1,1)
         fluxLmtM = minmod(deltaP,beta*deltaM)
         fluxLmtP  = minmod(deltaM,beta*deltaP)
-        u_l = u_l + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP     
-        
-
+        u_l = u_l + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP          
+        !
         v_l   =  Q(i,j,3)/Q(i,j,1)
         deltaP = Q(i,j+1,3)/Q(i,j+1,1) - Q(i,j,3)/Q(i,j,1)
         deltaM = Q(i,j,3)/Q(i,j,1) - Q(i,j-1,3)/Q(i,j-1,1)
         fluxLmtM = minmod(deltaP,beta*deltaM)
         fluxLmtP  = minmod(deltaM,beta*deltaP)
         v_l = v_l + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP
-
+        !
         u_r   = Q(i,j+1,2)/Q(i,j+1,1)
         deltaP = Q(i,j+2,2)/Q(i,j+2,1) - Q(i,j+1,2)/Q(i,j+1,1)
         deltaM = Q(i,j+1,2)/Q(i,j+1,1) - Q(i,j,2)/Q(i,j,1)
         fluxLmtM = minmod(deltaP,beta*deltaM)
         fluxLmtP  = minmod(deltaM,beta*deltaP)
         u_r = u_r - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
-             
-
+        !
         v_r   = Q(i,j+1,3)/Q(i,j+1,1)
         deltaP = Q(i,j+2,3)/Q(i,j+2,1) - Q(i,j+1,3)/Q(i,j+1,1)
         deltaM = Q(i,j+1,3)/Q(i,j+1,1) - Q(i,j,3)/Q(i,j,1)
         fluxLmtM = minmod(deltaP,beta*deltaM)
         fluxLmtP  = minmod(deltaM,beta*deltaP)
         v_r = v_r - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
-
-        UL = u_l*kx + v_l*ky
-        UR = u_r*kx + v_r*ky
-        VL = u_l*nx + v_l*ny
-        VR = u_r*nx + v_r*ny
-
-        VnL  = VL
-        VnR  = VR
-
+        !
         hoge   = (GAMMA-1.0d0)*(Q(i,j+1,4) - 0.5d0*(Q(i,j+1,2)**2.0d0 + Q(i,j+1,3)**2.0d0)/Q(i,j+1,1))
         pL     = (GAMMA-1.0d0)*(Q(i,j,4)   - 0.5d0*(Q(i,j,2)**2.0d0 + Q(i,j,3)**2.0d0)/Q(i,j,1))
         fuga   = (GAMMA-1.0d0)*(Q(i,j-1,4) - 0.5d0*(Q(i,j-1,2)**2.0d0 + Q(i,j-1,3)**2.0d0)/Q(i,j-1,1))
@@ -281,7 +389,7 @@ contains
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)
         pL   = pL + 0.25d0*(1.0d0 - phi)*fluxLmtM + 0.25d0*(1.0d0 + phi)*fluxLmtP 
-        
+        !
         hoge   = (GAMMA-1.0d0)*(Q(i,j+2,4) - 0.5d0*(Q(i,j+2,2)**2.0d0 + Q(i,j+2,3)**2.0d0)/Q(i,j+2,1))
         pR     = (GAMMA-1.0d0)*(Q(i,j+1,4) - 0.5d0*(Q(i,j+1,2)**2.0d0 + Q(i,j+1,3)**2.0d0)/Q(i,j+1,1))
         fuga   = (GAMMA-1.0d0)*(Q(i,j,4)   - 0.5d0*(Q(i,j,2)**2.0d0 + Q(i,j,3)**2.0d0)/Q(i,j,1))
@@ -290,7 +398,16 @@ contains
         fluxLmtP = minmod(deltaP,beta*deltaM)
         fluxLmtM = minmod(deltaM,beta*deltaP)          
         pR = pR - 0.25d0*(1.0d0 - phi)*fluxLmtP - 0.25d0*(1.0d0 + phi)*fluxLmtM
+        
 
+        rhoBar = 0.5d0*(rhoL + rhoR)
+        UL = u_l*kx + v_l*ky
+        UR = u_r*kx + v_r*ky
+        VL = u_l*nx + v_l*ny
+        VR = u_r*nx + v_r*ny
+
+        VnL  = VL
+        VnR  = VR
         HL   = (GAMMA*pL/(GAMMA-1.0d0) + 0.5d0*rhoL*(UL**2.0d0 + VL**2.0d0))/rhoL
         HR   = (GAMMA*pR/(GAMMA-1.0d0) + 0.5d0*rhoR*(UR**2.0d0 + VR**2.0d0))/rhoR
         HBar = 0.5d0*(HL+HR)
@@ -329,7 +446,7 @@ contains
         else
             F1 = rhoR*VR
             F2 = rhoR*VR*UR
-            F3 = rhoR*VR**2.0d0 +pR
+            F3 = rhoR*VR**2.0d0 + pR
             F4 = (eR + pR)*VR
         endif
 
@@ -367,7 +484,7 @@ contains
         !    F3 = rhoR*VR**2.0d0 + pR
         !    F4 = (eR + pR)*VR
         !endif
-        
+        !!
         !epsiron(1) = 0.5d0*(SR + SL)/(SR - SL)*(rhoL*VL - rhoR*VR) - &
         !                 SL*SR/(SR - SL)*(rhoL - rhoR)
         !epsiron(2) = 0.5d0*(SR + SL)/(SR - SL)*((rhoL*VL*UL) - (rhoR*VR*UR)) -&

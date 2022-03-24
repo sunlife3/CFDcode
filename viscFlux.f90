@@ -1,9 +1,9 @@
 subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
     implicit none
     integer,intent(in) :: Nxnum,Nynum
-    integer,parameter :: idxLeadEdge = 1,idxTrailEdge=500
+    integer,parameter :: idxLeadEdge = 10,idxTrailEdge=500
     integer :: i=0,j=0
-    real(8),intent(in) :: Q(-1:Nxnum+2,-1:Nynum+2,4),S(-2:Nxnum+3,-2:Nynum+3),&
+    real(8),intent(in) :: Q(-2:Nxnum+3,-2:Nynum+3,4),S(-2:Nxnum+3,-2:Nynum+3),&
                             m(-2:Nxnum+3,-2:Nynum+3,2),n(-2:Nxnum+3,-2:Nynum+3,2)
     real(8),intent(out) :: Ev(-1:Nxnum+2,-1:Nynum+2,4)
     real(8),parameter :: GAMMA = 1.4d0,Pr = 1.0d0
@@ -78,6 +78,7 @@ subroutine XviscFlux(Q,Ev,m,n,S,Nxnum,Nynum)
             vif  = (v(i+1,j)*sqrt(rho(i+1,j)) + v(i,j)*sqrt(rho(i,j)))/(sqrt(rho(i+1,j)) + sqrt(rho(i,j)))
             Tif  = (T(i+1,j)*sqrt(rho(i+1,j)) + T(i,j)*sqrt(rho(i,j)))/(sqrt(rho(i+1,j)) + sqrt(rho(i,j)))
             mu   = GAMMA*Tif
+            !mu = (GAMMA*Tif)**(3.0d0/2.0d0)*((1/GAMMA + S)/(T + S))
             tauxx = mu*(2.0d0/3.0d0)*(2.0d0*ux-vy)
             tauxy = mu*(uy+vx)
             tauyy = mu*(2.0d0/3.0d0)*(2.0d0*vy-ux)
@@ -101,8 +102,8 @@ subroutine YviscFlux(Q,Fv,m,n,S,Nxnum,Nynum)
     implicit none
     integer,intent(in) :: Nxnum,Nynum
     integer :: i=0,j=0,HOGE=0
-    integer,parameter :: idxLeadEdge = 1,idxTrailEdge=500
-    real(8),intent(in) :: Q(-1:Nxnum+2,-1:Nynum+2,4),S(-2:Nxnum+3,-2:Nynum+3),&
+    integer,parameter :: idxLeadEdge = 10,idxTrailEdge=500
+    real(8),intent(in) :: Q(-2:Nxnum+3,-2:Nynum+3,4),S(-2:Nxnum+3,-2:Nynum+3),&
                             m(-2:Nxnum+3,-2:Nynum+3,2),n(-2:Nxnum+3,-2:Nynum+3,2)
     real(8),intent(out) :: Fv(-1:Nxnum+2,-1:Nynum+2,4)
     real(8),parameter :: GAMMA = 1.4d0,Pr = 1.0d0
@@ -127,7 +128,7 @@ subroutine YviscFlux(Q,Fv,m,n,S,Nxnum,Nynum)
         do i=0,Nxnum
             if(j == 0)then
             !viscous Flux at wall(j = 0)
-                if(1<=i .and. i<=idxLeadEdge-2)then
+                if(1<=i .and. i<=idxLeadEdge-1)then
                     !calculation ...xi,...eta
                     ueta = u(i,j+1) - u(i,j)
                     veta = v(i,j+1) - v(i,j)
@@ -222,6 +223,7 @@ subroutine YviscFlux(Q,Fv,m,n,S,Nxnum,Nynum)
 
             !calculation shear stress
             mu = GAMMA*Tif
+            !mu = (GAMMA*Tif)**(3.0d0/2.0d0)*((1/GAMMA + S)/(T + S))
             tauxx = mu*(2.0d0/3.0d0)*(2.0d0*ux-vy)
             tauxy = mu*(uy+vx)
             tauyy = mu*(2.0d0/3.0d0)*(2.0d0*vy-ux)

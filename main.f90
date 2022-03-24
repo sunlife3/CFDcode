@@ -1,6 +1,6 @@
 module param
     implicit none
-    real(8) :: GAMMA = 1.4d0,Re = 1000.0d0,CFL = 0.15d0
+    real(8) :: GAMMA = 1.4d0,Re = 5000.0d0,CFL = 0.1d0
 contains
     function minmod(x,y) result(fluxLimiter)
         real(8),intent(in) :: x,y
@@ -21,32 +21,39 @@ program main
                            S(:,:),Ev(:,:,:),Fv(:,:,:)
     real(8),allocatable :: m(:,:,:),n(:,:,:),X(:,:),Y(:,:)!,is_SF_xi(:,:),is_SF_eta(:,:)
     real(8) dt,qmax
-    real(8) :: elapsedTime=0.0d0,Q1old=0.0d0,res=0.0d0,ressum=0.0d0,piyo=0.0d0
+    real(8) :: elapsedTime=0.0d0,Q1old=0.0d0,res=0.0d0,ressum=0.0d0,piyo=0.0d0,timelimit=0.5d0
 
     call getarg(argidx,argc)
     write(*,*)argc
     !!!!!!!!!!!!!! Grid Read !!!!!!!!!!!!!!!!!!!!!!
     if(argc == "SNS")then
-        !meshfile = 'MESH_tube(5025).txt'
-        meshfile = 'MESH_Tube_Buff(100025).txt'
+        meshfile = 'MESH_tube(5025).txt'
+        timelimit = 40.0d0
+        !meshfile = 'MESH_Tube_Buff(100025).txt'
     else if(argc == "Bow")then
         !meshfile = 'MESH_cylinderM2(100100).txt'
         meshfile = 'MESH_cylinder(100100).txt'
+        timelimit = 1.5d0
     else if(argc == "ramp")then
-        meshfile = 'MESH_rampGridM15(60)(100100).txt'
-        !meshfile = 'MESH_ductGridM15(100100).txt'
+        !meshfile = 'MESH_rampGridM15(60)(100100).txt'
+        timelimit = 0.2d0
+        meshfile = 'MESH_ductGridM15(100200).txt'
     else if(argc == "SWBLI")then
         meshfile = 'MESH_SWBLI(15000750).txt'
+        timelimit = 1.0d0
         !meshfile = 'MESH_ductGridM15(100100).txt'
     else if(argc == "visplate")then
-        meshfile = 'MESH_GridVisPlate.txt'
+        meshfile = 'MESH_VisPlateM5.txt'
+        !meshfile = 'MESH_GridVisPlate.txt'
+        timelimit = 20.0d0
         !meshfile = 'MESH_ductGridM15(100100).txt'
     else
         !open(Grid,file = 'MESH_TaperGridM15(100100).txt')
         !open(Grid,file = 'MESH_GridVisPlate.txt')
         !open(Grid,file = 'MESH_OddEven(35019).txt')
-        meshfile = 'MESH_SOTube(500020).txt'
-        !meshfile = 'MESH_LaxTube(200020).txt'
+        !meshfile = 'MESH_SOTube(500020).txt'
+        timelimit = 0.2d0
+        meshfile = 'MESH_Tube(100050).txt'
     endif
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -54,7 +61,7 @@ program main
     read(Grid,*)Nx,Ny
     write(*,*)Nx,Ny
 
-    allocate(Q(-2:Nx+2,-2:Ny+2,4),Qn(-2:Nx+2,-2:Ny+2,4),Qast(-2:Nx+2,-2:Ny+2,4),E(-1:Nx+2,-1:Ny+2,4),F(-1:Nx+2,-1:Ny+2,4),&
+    allocate(Q(-2:Nx+3,-2:Ny+3,4),Qn(-2:Nx+3,-2:Ny+3,4),Qast(-2:Nx+3,-2:Ny+3,4),E(-1:Nx+2,-1:Ny+2,4),F(-1:Nx+2,-1:Ny+2,4),&
                 E1(-1:Nx+2,-1:Ny+2,4),F1(-1:Nx+2,-1:Ny+2,4),E2(-1:Nx+2,-1:Ny+2,4),F2(-1:Nx+2,-1:Ny+2,4),&
                 S(-2:Nx+3,-2:Ny+3),m(-2:Nx+3,-2:Ny+3,2),n(-2:Nx+3,-2:Ny+3,2),X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4),&
                 Ev(-1:Nx+2,-1:Ny+2,4),Fv(-1:Nx+2,-1:Ny+2,4),is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2))
@@ -88,23 +95,23 @@ program main
             do i=1,Nx !space
                 do k=1,4
                     Qn(i,j,k) = Q(i,j,k)
-                    Qast(i,j,k) = Qn(i,j,k) - 0.50d0*(dt/S(i,j))*((E(i,j,k)-E(i-1,j,k) + F(i,j,k)-F(i,j-1,k)) &      
-                                                        - (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re) 
+                    Qast(i,j,k) = Qn(i,j,k) - 0.50d0*(dt/S(i,j))*((E(i,j,k)-E(i-1,j,k) + F(i,j,k)-F(i,j-1,k)))! &      
+                                                        !- (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re) 
                 enddo
             enddo
         enddo
 
         call setbdycond(Qast,m,n,Nx,Ny,is_SF_xi,argc)
         call evalFlux(Qast,E,F,E1,E2,F1,F2,m,n,Nx,Ny,is_SF_xi,is_SF_eta)
-        !call Xviscflux(Q,Ev,m,n,S,Nx,Ny)
-        !call YviscFlux(Q,Fv,m,n,S,Nx,Ny)
+        !call Xviscflux(Qast,Ev,m,n,S,Nx,Ny)
+        !call YviscFlux(Qast,Fv,m,n,S,Nx,Ny)
         
         do j=1,Ny
             do i=1,Nx !space
-                !Q1old = Qn(i,j,1)
+                Q1old = Qn(i,j,1)
                 do k=1,4
-                    Q(i,j,k) = Qn(i,j,k) - (dt/S(i,j))*((E(i,j,k)-E(i-1,j,k) + F(i,j,k)-F(i,j-1,k)) & 
-                                                        - (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re)
+                    Q(i,j,k) = Qn(i,j,k) - (dt/S(i,j))*((E(i,j,k)-E(i-1,j,k) + F(i,j,k)-F(i,j-1,k)))! & 
+                                                        !- (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re)
                 enddo
                 res = abs(Q(i,j,1) - Q1old)
                 ressum = ressum + res
@@ -113,12 +120,12 @@ program main
         ressum = ressum/(Nx*Ny)
         elapsedTime = elapsedTime + dt
         
-        if(0.1d0*index < elapsedtime)then
-            !call print_profile(Q,Nx,Ny,index)
-            call output2file(Q,Nx,Ny,index,meshfile)
-            index = index + 1
-            !piyo = piyo + 0.006d0
-        endif
+        !if(1.0d0*index < elapsedtime)then
+        !    !call print_profile(Q,Nx,Ny,index)
+        !    call output2file(Q,Nx,Ny,index,meshfile)
+        !    index = index + 1
+        !    !piyo = piyo + 0.006d0
+        !endif
 
         write(*,*)elapsedTime,',',ressum
         
@@ -128,7 +135,7 @@ program main
                 do i=1,Nx
                     do k=1,4
                         if(isNaN(Q(i,j,k)))then
-                            !write(*,*)i,j,k,Q(i,j,k),Ev(i,j,k),Fv(i,j,k)
+                            write(*,*)i,j,k,Q(i,j,k)
                         endif
                     enddo
                 enddo
@@ -136,7 +143,7 @@ program main
             exit
         endif
 
-        if(1.8d0 <= elapsedTime)then
+        if(timelimit <= elapsedTime)then
             exit
         endif
 

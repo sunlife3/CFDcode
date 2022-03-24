@@ -6,9 +6,9 @@ program visualize
         character filename*128,meshfile*64,generalcoord*32,pltfile*64
         !real(8),intent(in) :: Q(-1:Nx+2,-1:Ny+2,4)
         real(8),allocatable :: X(:,:),Y(:,:),Q(:,:,:),m(:,:,:),n(:,:,:),Flag(:,:),prf(:,:)
-        real(8) :: rho1,u1,v1,p1,t1,rho2,u2,v2,p2,t2,xcenter,ycenter,ax,ay,bx,by,cL1,cL2,cR1,cR2,VnL,VnR,VtL,VtR,&
+        real(8) :: rho1,u1,v1,p1,t1,rho2,u2,v2,p2,t2,xcenter,ycenter,ax,ay,bx,by,c,cL1,cL2,cR1,cR2,VnL,VnR,VtL,VtR,&
                     betadeg,beta,betadeg2,beta2,kaku(2),theta,theta1,theta2,M1,hoge,fuga,tantheta,uave1,vave1,uave2,vave2,&
-                    rho,u,v,p,t,mx,my,gradP,Vn(4),Vabs1,Vabs2,Entropy
+                    rho,u,v,p,t,mx,my,gradP,Vn(4),Vabs1,Vabs2,Entropy,f
         real(8),parameter :: GAMMA=1.4d0,PI=3.14159265359d0
 
         !open(GridNum,file = 'GridNum.txt')
@@ -18,25 +18,26 @@ program visualize
 
         
         
-        do index=10,10
+        do index=1,1
         !open(Grid,file = 'MESH_tube.txt')
-        !write(filename,'("QbinSLAU2 SNS(M20,Buff,3timesLT)_",i3.3,".dat")')index
+        !write(filename,'("QbinSLAU2 SNS(M20,i=40,1st)_",i3.3,".dat")')index
         !write(filename,'("QbinSF-SD-SLAU(meshM5).dat")')
-        !write(filename,'("Qbin_SD_duct5deg(M10,100)_",i1.1,".dat")')index
-        !write(filename,'("Qbin_SLAU2_ramp5deg(M2,100)_",i1.1,".dat")')index
-        !write(filename,'("Qbin_AUSMDV3rd_duct5deg(M10,100,2step)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_duct5deg(M15,100,60)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_ramp5deg(M15,100,70)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_AUSM_duct5deg(M15,100)_",i1.1,".dat")')index
         !write(filename,'("QbinHLL SNS(M2,b=25,e=10)_",i3.3,".dat")')index
-        !write(filename,'("Qbin HLL Cylinder(M10,100)_",i3.3,".dat")')index
+        write(filename,'("Qbin HLL Cylinder(M20,100,30deg)_",i3.3,".dat")')index
+        !write(filename,'("Qbin_AUSM_BoundaryLayer(M5)_",i2.2,".dat")')index
         !write(filename,'("Qbin_Exact_ramp5deg(M15,100)_",i1.1,".dat")')index
         !write(filename,'("Qbin_SD_DoubleMach(M5,200)_",i1.1,".dat")')index!
-        write(filename,'("Qbin_SWBLI(1000)_",i2.2,".dat")')index
+        !write(filename,'("Qbin_SWBLI(SD,MUSCL,2000,Re1000,M15)_",i2.2,".dat")')index
         open(Qbin,file = filename)
         read(Qbin,*)meshfile
         write(*,*)meshfile
         open(Grid,file = meshfile)
         read(Grid,*)Nx,Ny
         write(*,*)Nx,Ny
-        allocate(X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4),Q(-1:Nx+2,-1:Ny+2,4),Flag(-1:Nx+2,-1:Ny+2),&
+        allocate(X(-3:Nx+4,-3:Ny+4),Y(-3:Nx+4,-3:Ny+4),Q(-2:Nx+3,-2:Ny+3,4),Flag(-1:Nx+2,-1:Ny+2),&
                     m(-2:Nx+3,-2:Ny+3,2),n(-2:Nx+3,-2:Ny+3,2),prf(-1:Nx+2,-1:Ny+2))
 
         do j=-3,Ny+4
@@ -46,33 +47,33 @@ program visualize
         enddo
         close(Grid)
 
-        !do j=-2,Ny+3
-        !    do i=-2,Nx+3
-        !        m(i,j,1) =  0.5d0*(0.5d0*(Y(i,j+1) - Y(i,j-1)) + 0.5d0*(Y(i+1,j+1) - Y(i+1,j-1))) 
-        !        m(i,j,2) = -0.5d0*(0.5d0*(X(i,j+1) - X(i,j-1)) + 0.5d0*(X(i+1,j+1) - X(i+1,j-1)))
-        !        n(i,j,1) = -0.5d0*(0.5d0*(Y(i+1,j) - Y(i-1,j)) + 0.5d0*(Y(i+1,j+1) - Y(i-1,j+1)))
-        !        n(i,j,2) =  0.5d0*(0.5d0*(X(i+1,j) - X(i-1,j)) + 0.5d0*(X(i+1,j+1) - X(i-1,j+1)))
-        !    enddo
-        !enddo
+        do j=-2,Ny+3
+            do i=-2,Nx+3
+                m(i,j,1) =  0.5d0*(0.5d0*(Y(i,j+1) - Y(i,j-1)) + 0.5d0*(Y(i+1,j+1) - Y(i+1,j-1))) 
+                m(i,j,2) = -0.5d0*(0.5d0*(X(i,j+1) - X(i,j-1)) + 0.5d0*(X(i+1,j+1) - X(i+1,j-1)))
+                n(i,j,1) = -0.5d0*(0.5d0*(Y(i+1,j) - Y(i-1,j)) + 0.5d0*(Y(i+1,j+1) - Y(i-1,j+1)))
+                n(i,j,2) =  0.5d0*(0.5d0*(X(i+1,j) - X(i-1,j)) + 0.5d0*(X(i+1,j+1) - X(i-1,j+1)))
+            enddo
+        enddo
         
         
             
-            do j=-1,Ny+2
-                do i=-1,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     read(Qbin,*)Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
                     !write(*,*)Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
                 enddo
             enddo
             close(Qbin)
-            !write(filename,'("BoundaryLayer",i3.3,".vtk")')index
+            !write(filename,'("BoundaryLayerM5_",i2.2,".vtk")')index
             !open(fo,file = 'BoundaryLayer.vtk')
-            !write(filename,'("duct5deg_HLLAUSM_M10(100)_",i3.3,".vtk")')index
+            !write(filename,'("duct5deg_AUSM_M15(100)_",i3.3,".vtk")')index
             !write(filename,'("duct5deg_sd_M10(200100)_",i3.3,".vtk")')index
-            !write(filename,'("ramp5deg_SD-SLAU_M2_",i3.3,".vtk")')index
-            !write(filename,'("Bow Shock_HLL M20_100",i3.3,".vtk")')index
-            !write(filename,'("Steady Normal Shock_SLAU2(M20,Buff,3LT)_",i3.3,".vtk")')index
+            !write(filename,'("ramp5deg_shock detection generalCordVel_M15(60)_",i3.3,".vtk")')index
+            write(filename,'("Bow Shock_HLL M20_30deg_100",i2.2,".vtk")')index
+            !write(filename,'("Steady Normal Shock_SLAU2(M20,i=40,1st)_",i3.3,".vtk")')index
             !write(filename,'("DoubleMach_60deg_sd_M10(200100)_",i3.3,".vtk")')index
-            write(filename,'("Shock wave boundary layer interaction(1000)",i3.3,".vtk")')index
+            !write(filename,'("SWBLI(Re1000,MUSCL,2000,SD,M15)",i3.3,".vtk")')index
             open(fo,file = filename)
             write(fo,"('# vtk DataFile Version 3.0')")
             write(fo,"('ramp')")
@@ -95,12 +96,12 @@ program visualize
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
-                    write(fo,"(f10.6)")Q(i,j,1)
-                    
+                    write(fo,'(f10.5)')Q(i,j,1)!sqrt(((Q(i,j,1) - Q(i-1,j,1))/0.0005d0)**2.0d0 + ((Q(i,j,1) - Q(i,j-1,1))/0.0005d0)**2.0d0)
+                    !write(*,*)sqrt(((Q(i,j,1) - Q(i-1,j,1))/0.0005d0)**2.0d0 + ((Q(i,j,1) - Q(i,j-1,1))/0.0005d0)**2.0d0)
                 enddo
             enddo
 
-            write(fo,"('SCALARS U float')")
+            write(fo,"('SCALARS v float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
@@ -109,14 +110,38 @@ program visualize
                     v   = Q(i,j,3)/Q(i,j,1)
                     p   = (GAMMA-1.0d0)*(Q(i,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
                     t   = p/rho
-                    write(fo,"(f10.7)")u!*m(i,j,1)+&!/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0) + &
-                                       !v*m(i,j,2)!&/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0)&
-                                        ! - sqrt(GAMMA * p/rho)!*sqrt((m(i,j,1)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0))**2.0d0 + &
-                                                                !     (m(i,j,2)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0))**2.0d0))
+                    c   = sqrt(GAMMA*p/rho) 
+                    VnL = u*n(i,j,1) + v*n(i,j,2)
+                    cL1  = c*sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0)
+
+                    rho = Q(i,j+2,1)
+                    u   = Q(i,j+2,2)/Q(i,j+2,1)
+                    v   = Q(i,j+2,3)/Q(i,j+2,1)
+                    p   = (GAMMA-1.0d0)*(Q(i,j+2,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
+                    t   = p/rho
+                    c   = sqrt(GAMMA*p/rho) 
+                    VnR = u*n(i,j+1,1) + v*n(i,j+1,2)
+                    cR1  = c*sqrt(n(i,j+1,1)**2.0d0 + n(i,j+1,2)**2.0d0)
+                    if(VnL-cL1 > 0 .and. VnL-cR1 < 0)then
+                        f=1.0d0
+                    else if(VnL+cL1 > 0 .and. VnR+cR1 < 0)then
+                        f=1.0d0
+                    !else if(VnL-cL1 < 0 .and. VnR-cR1 > 0)then
+                    !    f=1.0d0
+                    !else if(VnL+cL1 < 0 .and. VnR+cR1 > 0)then
+                    !    f=1.0d0
+                    else
+                        f=0.0d0
+                    endif
+                    write(fo,'(f10.5)')f!u*m(i,j,1) + v*m(i,j,2) - sqrt(GAMMA*p/rho)*sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0)
+                    !write(fo,"(f10.7)")u*m(i,j,1)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0) + &
+                    !                   v*m(i,j,2)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0) &
+                    !                     - (sqrt(GAMMA * p/rho)*sqrt((m(i,j,1)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0))**2.0d0 + &
+                    !                                                 (m(i,j,2)/sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0))**2.0d0))
                 enddo
             enddo
 
-            write(fo,"('SCALARS V float')")
+            write(fo,"('SCALARS schlieren float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
@@ -125,14 +150,15 @@ program visualize
                     v   = Q(i,j,3)/Q(i,j,1)
                     p   = (GAMMA-1.0d0)*(Q(i,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
                     t   = p/rho
-                    write(fo,"(f10.7)")v!u*n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0) + &
-            !                           v*n(i,j,2)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0)!&
-                                         !- (sqrt(GAMMA * p/rho)*sqrt((n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))**2.0d0 + &
-                                         !                            (n(i,j,2)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))**2.0d0))
+                    write(fo,'(f10.5)')sqrt((Q(i,j,1) - Q(i-1,j,1))**2.0d0 + (Q(i,j,1) - Q(i,j-1,1))**2.0d0)!u*n(i,j,1) + v*n(i,j,2) - sqrt(GAMMA*p/rho)*sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0)
+                    !write(fo,"(f10.7)")u*n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0) + &
+                    !                   v*n(i,j,2)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0)&
+                    !                     - (sqrt(GAMMA * p/rho)*sqrt((n(i,j,1)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))**2.0d0 + &
+                    !                                                 (n(i,j,2)/sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))**2.0d0))
                 enddo
             enddo
 
-            write(fo,"('SCALARS p float')")
+            write(fo,"('SCALARS T/T1 float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
                 do i=1,Nx
@@ -141,11 +167,12 @@ program visualize
                     v   = Q(i,j,3)/Q(i,j,1)
                     p   = (GAMMA-1.0d0)*(Q(i,j,4) - 0.5d0*rho*(u**2.0d0 + v**2.0d0))
                     t   = p/rho
-                    write(fo,"(f10.6)")p
+                    write(fo,'(f10.4)')t*1.4d0
                     !write(*,*)'C',i,j,sqrt(GAMMA*p/rho)
                 enddo
             enddo
 
+            !write(fo,"('SCALARS Ducros float')")
             write(fo,"('SCALARS f float')")
             write(fo,"('LOOKUP_TABLE default')")
             do j=1,Ny
@@ -167,10 +194,13 @@ program visualize
                     v2   = Q(i+1,j,3)/Q(i+1,j,1)
                     p2   = (GAMMA-1.0d0)*(Q(i+1,j,4) - 0.5d0*rho2*(u2**2.0d0 + v2**2.0d0))
                     t2   = p2/rho2
-                    
-                    write(fo,"(f10.7)")min(p1/p2,p2/p1)**3.0d0
-                    !write(fo,"(f10.7)")min(p2/p1,p1/p2)**3.0d0
-                    !write(*,*)'C',i,j,sqrt(GAMMA*p/rho)
+                    if(min(p1/p2,p2/p1)**3.0d0 < 0.5d0)then
+                        f=1.0
+                    else
+                        f=0.0d0
+                    endif
+                    write(fo,"(f10.7)")f!min(p1/p2,p2/p1)**3.0d0
+                    !write(fo,"(f10.7)")abs((p - 2.0d0*p1 + p2)/(p + 2.0d0*p1 + p2))
                 enddo
             enddo
 
@@ -215,14 +245,14 @@ program visualize
                     !write(*,*)i,j,prf(i,j)
                     !Flag(i,j) = prf(i,j)
                     
-                    if(prf(i,j) < 0.55d0)then
+                    if(prf(i,j) < 0.2d0)then
                         ! Shock Detection by velocity
                         do l=1,Nx 
                             p1   = (GAMMA-1.0d0)*(Q(l-1,j-2,4) - 0.5d0*(Q(l-1,j-2,2)**2.0d0 + Q(l-1,j-2,3)**2.0d0)/Q(l-1,j-2,1))
                             p2   = (GAMMA-1.0d0)*(Q(l+1,j-2,4) - 0.5d0*(Q(l+1,j-2,2)**2.0d0 + Q(l+1,j-2,3)**2.0d0)/Q(l+1,j-2,1))
                             prf(l,j-2) = (min(p1/p2,p2/p1))**3.0d0
 
-                            if(prf(l,j-2) < 0.55d0)then
+                            if(prf(l,j-2) < 0.2d0)then
                                 
                                 theta = atan((Y(i,j) - Y(l,j-2))/(X(i,j) - X(l,j-2)))
                                 if(theta < 0.0d0)then
@@ -241,8 +271,7 @@ program visualize
                                         !Flag(i,j) = 0.0d0
                                     else
                                         Flag(i,j) = 1.0d0                 
-                                        
-                                        !write(*,*)'xi',i,j,theta*180.0d0/PI,u1,v1,u2,v2,&
+                                        write(*,*)i,j,theta*180.0d0/PI,u1,v1,u2,v2
                                         !sqrt(u1**2.0d0 + v1**2.0d0),sqrt(u2**2.0d0 + v2**2.0d0)
                                     endif
                                 endif
@@ -282,7 +311,7 @@ program visualize
 
                     prf(i,j) = (min(p1/p2,p2/p1))**3.0d0
 
-                    if(prf(i,j) < 0.5d0)then
+                    if(prf(i,j) < 0.2d0)then
 
                         ! Shock Detection by compare Vn
                         do l=1,Ny
@@ -290,7 +319,7 @@ program visualize
                             p2   = (GAMMA-1.0d0)*(Q(i-2,l+1,4) - 0.5d0*(Q(i-2,l+1,2)**2.0d0 + Q(i-2,l+1,3)**2.0d0)/Q(i-2,l+1,1))
                             prf(i-2,l) = (min(p1/p2,p2/p1))**3.0d0
                             
-                            if(prf(i-2,l) < 0.5d0)then
+                            if(prf(i-2,l) < 0.2d0)then
                                 theta = atan((Y(i,j) - Y(i-2,l))/(X(i,j) - X(i-2,l)))
                                 
                                 if(90.0d0*PI/180.0d0 < theta .or. theta < -90.0d0*PI/180.0d0)then
@@ -310,6 +339,7 @@ program visualize
                                         else
                                             if(theta < 0.0d0)then 
                                             Flag(i,j) = 1.0d0
+                                            write(*,*)i,j,theta*180.0d0/PI,u1,v1,u2,v2
                                             endif
                                             
                                             !write(*,*)i,j,l,theta*180/PI,VnL,cL2,sqrt(u1**2.0d0 + v1**2.0d0),VnR,cR2,sqrt(u2**2.0d0 + v2**2.0d0)
@@ -326,10 +356,10 @@ program visualize
                                         if(sqrt(u1**2.0d0 + v1**2.0d0) > sqrt(u2**2.0d0 + v2**2.0d0))then!NOT accerelation
                                             !Flag(i,j) = 0.0d0
                                         else
-                                            !if(theta > 0.0d0)then
+                                            if(theta > 0.0d0)then
                                             Flag(i,j) = 1.0d0
-                                            !write(*,*)i,j,theta*180/PI,VnL,u1,v1,u2,v2,VnL,VnR
-                                            !endif
+                                            write(*,*)i,j,theta*180.0d0/PI,u1,v1,u2,v2
+                                            endif
                                             
                                             !write(*,*)i,j,l,theta*180/PI,VnR,cR2,sqrt(u2**2.0d0 + v2**2.0d0),VnL,cL2,sqrt(u1**2.0d0 + v1**2.0d0)
                                         endif

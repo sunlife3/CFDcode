@@ -68,26 +68,27 @@ contains
         implicit none
         integer,intent(in) :: Nx,Ny,index
         integer :: fo=20,i=0,j=0,Grid=19
-        real(8),intent(in) :: Q(-2:Nx+2,-2:Ny+2,4)
+        real(8),intent(in) :: Q(-2:Nx+3,-2:Ny+3,4)
         character filename*128
         character,intent(in) :: meshfile*64
 
-        !write(filename,'("Qbin HLLAUSM Cylinder(M20,100)_",i3.3,".dat")')index
-        !write(filename,'("QbinSLAU2 SNS(M20,Buff,3timesLT)_",i3.3,".dat")')index
-        write(filename,'("Qbin_AUSM_duct5deg(M15,100)_",i1.1,".dat")')index
-        !write(filename,'("Qbin_HLLAUSM_ramp5deg(M15,100,case1)_",i1.1,".dat")')index
+        write(filename,'("Qbin HLL Cylinder(M20,100,30deg)_",i3.3,".dat")')index
+        !write(filename,'("QbinSLAU2 SNS(M20,i=40,1st)_",i3.3,".dat")')index
+        !write(filename,'("Qbin_HLL(WCNS)_ramp5deg(M15,100)_",i1.1,".dat")')index 
+        !write(filename,'("Qbin_duct5deg(M15,100,60)_",i1.1,".dat")')index
         !write(filename,'("Qbin_HLL_1stratio_50(HLL)&25(HLL)&0(HLL)_",i1.1,".dat")')index
-        !write(filename,'("Qbin_AUSM_Shu-Osher3rd_50(AUSM)&25(AUSM)&0(AUSM)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_HLLAUSM_SOD_MUSCL(200)_",i1.1,".dat")')index
         !write(filename,'("Qbin_SD_DoubleMach(M5,200)_",i1.1,".dat")')index
-        !write(filename,'("Qbin_Exact_ramp5deg(M15,100)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_SLAU2_ramp5deg(M15,100,1vs3)_",i1.1,".dat")')index
+        !write(filename,'("Qbin_AUSM_BoundaryLayer2(M5)_",i2.2,".dat")')index
         !write(filename,'("CSP.dat")')
         !write(filename,'("Qbin_SWBLI(HLLAUSM,3000,Re1000)_",i2.2,".dat")')index
         !open(fo,file='Qbin.dat')
         open(fo,file = filename)
         write(fo,*)meshfile
-        do j=-2,Ny+2
-            do i=-2,Nx+2
-                write(fo,*)i,j,Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
+        do j=-2,Ny+3
+            do i=-2,Nx+3
+                write(fo,*)Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
             enddo
         enddo
         close(fo)
@@ -127,11 +128,11 @@ contains
         !beta = 8.1d0*PI/180d0!M8
         !beta = 9.5d0*PI/180d0!M10
         !beta = 10.9d0*PI/180d0!M8
-        beta = 11.8d0*PI/180d0!M7
+        !beta = 11.8d0*PI/180d0!M7
         !beta = 15.1d0*PI/180d0!M5
         !beta = 18.0d0*PI/180d0!M4
         !beta = 23.1d0*PI/180d0!M3
-        !beta = 34.3d0*PI/180d0!M2
+        beta = 34.3d0*PI/180d0!M2
         theta = 5.0d0*PI/180d0
         
         do index=1,1
@@ -149,7 +150,7 @@ contains
             close(Qbin)
             !write(filename,'("ramp5deg_SD-AUSMDV_(M15)(100)",i1.1,".dat")')index
             !write(filename,'("ramp5deg_HLLAUSMmix_(M15,Case3-2,triple)(100)",i1.1,".dat")')index
-            write(filename,'("ramp5deg_HLLAUSM(M15,100,case1)",i3,".dat")')index
+            write(filename,'("ramp5deg_HLLAUSM(M15,100)",i3,".dat")')index
             !write(filename,'("AUSM_Shu-Osher3rd_50(AUSM)&25(AUSM)&0(AUSM)_",i1.1,".dat")')index
             !write(filename,'("duct5deg_SD-AUSMDV_(M15)",i1.1,".dat")')index
             !write(filename,'("SNS_SD-AUSMDV_(M20,SFver2)",i1.1,".dat")')index

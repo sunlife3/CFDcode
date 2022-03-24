@@ -4,9 +4,9 @@
         integer :: i=0,j=0,Qbin=100,index = 1
         character filename*64,meshfile*64
         character,intent(in) :: argc*64
-        real(8),intent(out) :: Q(-2:Nx+2,-2:Ny+2,4)
+        real(8),intent(out) :: Q(-2:Nx+3,-2:Ny+3,4)
         real(8),parameter :: PI=acos(-1.0d0)
-        real(8) :: rho(-2:Nx+2),p(-2:Nx+2),u(-2:Nx+2),v(-2:Nx+2),e,a1,a2,a3,Minf,&
+        real(8) :: rho(-2:Nx+3),p(-2:Nx+3),u(-2:Nx+3),v(-2:Nx+3),e,a1,a2,a3,Minf,&
                    rhoL,rhoR,rhoM,uL,uR,uM,pL,pR,pM
 
         
@@ -14,9 +14,9 @@
             !Steady Normal Shock
             write(*,*)"SNS InitCond"
             Minf=20d0
-            do j=-2,Ny+2
-                do i=-2,Nx+2
-                    if(i <= 13)then
+            do j=-2,Ny+3
+                do i=-2,Nx+3
+                    if(i <= 40)then
                         Q(i,j,1) = 1.0d0
                         Q(i,j,2) = 1.0d0
                         Q(i,j,3) = 0.0d0
@@ -55,8 +55,8 @@
 
         else if(argc == "ramp")then
             !Ramp
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     rho(i) = 1.0d0
                     p(i)   = 1.0d0/1.4d0
                     u(i)   = 15.0d0
@@ -71,8 +71,8 @@
         else if(argc == "Bow")then
             !Bow
             
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     rho(i) = 1.0d0
                     p(i)   = 1.0d0/1.4d0
                     u(i)   = 0.0d0
@@ -86,8 +86,8 @@
 
         else if(argc == "PS")then
             !Propagating Shock Wave
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     rho(i) = 1.0d0
                     p(i)   = 1.0d0/1.4d0
                     u(i)   = 3.0d0
@@ -102,8 +102,9 @@
 
         else if(argc == "SO")then
             !Shu Osher
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            write(*,*)'SO'
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     if(i <= Nx/10)then
                         rho(i) = 3.857143d0
                         p(i)   = 31.0d0/3
@@ -122,11 +123,33 @@
                 enddo
             enddo
 
+        else if(argc == "SOD")then
+            !Shu Osher
+            write(*,*)'SOD'
+            do j=-2,Ny+3
+                do i=-2,Nx+3
+                    if(i <= Nx/2)then
+                        rho(i) = 1.0d0
+                        p(i)   = 1.0d0
+                        u(i)   = 0.0d0
+                        v(i)   = 0.0d0
+                    else
+                        rho(i) = 0.125d0
+                        p(i)   = 0.1d0
+                        u(i)   = 0.0d0
+                        v(i)   = 0.0d0
+                    endif
+                    Q(i,j,1) = rho(i)
+                    Q(i,j,2) = rho(i)*u(i)
+                    Q(i,j,3) = rho(i)*v(i)
+                    Q(i,j,4) = p(i)/(1.4d0 - 1.0d0) + 0.5d0*rho(i)*(u(i)**2.0d0 + v(i)**2.0d0)
+                enddo
+            enddo
         
         else if(argc == "LAX")then
             !LAX problem 
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     if(i < Nx/2)then
                         rho(i) = 0.445d0
                         u(i) = 0.698d0
@@ -151,10 +174,10 @@
         
         else if(argc == "visplate")then
             !write(*,*) "plate"
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     rho(i) = 1.0d0
-                    u(i) = 2.0d0
+                    u(i) = 5.0d0
                     v(i) = 0.0d0
                     p(i) = 1.0d0/1.4d0
                     Q(i,j,1) = rho(i)
@@ -163,6 +186,17 @@
                     Q(i,j,4) = p(i)/(1.4d0 - 1.0d0) + 0.5d0*rho(i)*(u(i)**2.0d0 + v(i)**2.0d0)
                 enddo
             enddo
+            !write(filename,'("Qbin_AUSM_BL(M5)_",i1.1,".dat")')9
+            !open(Qbin,file = filename)
+            !read(Qbin,*)meshfile
+            !write(*,*)meshfile
+            !do j=-2,Ny+3
+            !    do i=-2,Nx+3
+            !        read(Qbin,*)Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
+            !        !write(*,*)Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
+            !    enddo
+            !enddo
+            !close(Qbin)
 
         else if(argc == "SWBLI")then
             !write(filename,'("Qbin_SWBLI_",i1.1,".dat")')9
@@ -176,8 +210,8 @@
             !    enddo
             !enddo
             !close(Qbin)
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     if(i < Nx/2)then
                         rho(i) = 120d0
                         u(i) = 0.0d0
@@ -202,8 +236,8 @@
         
         else if(argc == "DMR")then
             !Double Mach Reflection
-            do j=-2,Ny+2
-                do i=-2,Nx+2
+            do j=-2,Ny+3
+                do i=-2,Nx+3
                     if(0.01d0*i <= (1.0d0+0.9d0)/tan(60.0d0*PI/180.0d0))then
                         if(tan(60.0d0*PI/180.0d0)*0.01d0*i - 0.9d0 < 0.01d0*j)then
                             Q(i,j,1) = 8.0d0
