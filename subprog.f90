@@ -26,123 +26,6 @@ contains
         enddo
     end subroutine setMetrics
 
-    subroutine detectSonicPoint(Q,Nx,Ny,is_SF_xi,is_SF_eta)
-        implicit none
-        integer,intent(in) :: Nx,Ny
-        integer :: i=0,j=0,cnt,idxBndUpper=0,idxBndLower=0
-        integer,intent(out) :: is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2)
-        !real(8),intent(out) :: is_SF_xi(-1:Nx+2,-1:Ny+2),is_SF_eta(-1:Nx+2,-1:Ny+2)
-        real(8),intent(in) :: Q(-2:Nx+3,-2:Ny+3,4)
-        real(8) :: rho1,u1,v1,p1,t1,rho2,u2,v2,p2,t2,VnL,VnR,cL,cR,beta,f,f1,f2,g
-        real(8),parameter :: PI=acos(-1.0d0)
-
-        beta = 7.9d0*PI/180d0
-
-        do j=1,Ny
-            do i=1,Nx
-                !do cnt=0,45
-                    !beta = beta + 2.0d
-                    
-            !!!!! detection direction Leftside and Rightside !!!!!!
-                    rho1 = Q(i,j,1)
-                    u1   = Q(i,j,2)/Q(i,j,1)
-                    v1   = Q(i,j,3)/Q(i,j,1)
-                    t1   = (GAMMA-1.0d0)*(Q(i,j,4)/rho1 - 0.5d0*(u1**2.0d0 + v1**2.0d0))
-                    p1   = rho1*t1
-                    cL = sqrt(GAMMA*p1/rho1)
-                    !VnL = u1*sin(beta) - v1*cos(beta)
-                    
-                    !if(j<2)then
-                    !    write(*,*)i,j,VnL,cL
-                    !endif
-
-                    rho2 = Q(i+1,j,1)
-                    u2   = Q(i+1,j,2)/Q(i+1,j,1)
-                    v2   = Q(i+1,j,3)/Q(i+1,j,1)
-                    t2   = (GAMMA-1.0d0)*(Q(i+1,j,4)/rho2 - 0.5d0*(u2**2 + v2**2))
-                    p2   = rho2*t2
-                    cR = sqrt(GAMMA*p2/rho2)
-                    !VnR = u2*sin(beta) - v2*cos(beta)
-
-                    !is_SF_xi(i,j) = 0.0d0!min(p1/p2,p2/p1)**3.0d0
-                    !write(*,*)i,j,VnL,cL,VnR,cR
-                    if((VnL-cL > 0 .and. VnR-cR < 0) .or. (VnL+cL > 0 .and. VnR+cR < 0))then
-                        
-                        !case3-2
-                        !write(*,*)i,j
-                        is_SF_xi(i,j+1) = 2
-                        is_SF_xi(i-1,j+1) = 2
-                        is_SF_xi(i,j-1) = 2
-                        is_SF_xi(i-1,j-1) = 2
-                        is_SF_xi(i,j) = 1    !
-                        is_SF_xi(i-1,j) = 1  !
-                        is_SF_xi(i+1,j) = 2
-                        is_SF_xi(i-2,j) = 2
-                        is_SF_eta(i,j) = 1   !
-                        is_SF_eta(i,j-1) = 1 !                        
-                        is_SF_eta(i-1,j) = 2
-                        is_SF_eta(i-1,j-1) = 2
-                        is_SF_eta(i+1,j) = 2
-                        is_SF_eta(i+1,j-1) = 2
-                        is_SF_eta(i,j-2) = 2
-                        is_SF_eta(i,j+1) = 2
-
-                    else    
-
-                    endif
-            
-            !!!!! detection direction Upside and Downside !!!!!
-
-                    rho1 = Q(i,j,1)
-                    u1   = Q(i,j,2)/Q(i,j,1)
-                    v1   = Q(i,j,3)/Q(i,j,1)
-                    t1   = (GAMMA-1.0d0)*(Q(i,j,4)/rho1 - 0.5d0*(u1**2.0d0 + v1**2.0d0))
-                    p1   = rho1*t1
-                    cL = sqrt(GAMMA*p1/rho1)
-                    VnL = u1*sin(beta) - v1*cos(beta)
-
-                    rho2 = Q(i,j+1,1)
-                    u2   = Q(i,j+1,2)/Q(i,j+1,1)
-                    v2   = Q(i,j+1,3)/Q(i,j+1,1)
-                    t2   = (GAMMA-1.0d0)*(Q(i,j+1,4)/rho2 - 0.5d0*(u2**2 + v2**2))
-                    p2   = rho2*t2
-                    cR = sqrt(GAMMA*p2/rho2)
-                    VnR = u2*sin(beta) - v2*cos(beta)
-
-                    !is_SF_eta(i,j) = 0.0d0!min(p1/p2,p2/p1)**3.0d0
-
-                    if((VnL-cL>0 .and. VnR-cR<0) .or. (VnL+cL>0 .and. VnR+cR<0))then
-                        
-                        !write(*,*)i,j
-                        !case3-2
-                        is_SF_xi(i,j+1) = 2
-                        is_SF_xi(i-1,j+1) = 2
-                        is_SF_xi(i,j-1) = 2
-                        is_SF_xi(i-1,j-1) = 2
-                        is_SF_xi(i,j) = 1     !
-                        is_SF_xi(i-1,j) = 1   !
-                        is_SF_xi(i+1,j) = 2
-                        is_SF_xi(i-2,j) = 2
-                        is_SF_eta(i,j) = 1    !
-                        is_SF_eta(i,j-1) = 1  !
-                        is_SF_eta(i-1,j) = 2
-                        is_SF_eta(i-1,j-1) = 2
-                        is_SF_eta(i+1,j) = 2
-                        is_SF_eta(i+1,j-1) = 2
-                        is_SF_eta(i,j-2) = 2
-                        is_SF_eta(i,j+1) = 2
-                        
-
-
-                    else    
-  
-                    endif
-
-                !enddo                           
-            enddo
-        enddo
-    end subroutine detectSonicPoint
-
     subroutine switchEnable(Nx,Ny,is_SF_xi,is_SF_eta,i,j)
         implicit none
         integer,intent(in) :: i,j,Nx,Ny
@@ -227,14 +110,8 @@ endif
                             
                             if((VnL - cL > 0 .and. VnR - cR < 0) .or. (VnL + cL > 0 .and. VnR + cR <0))then
                                 if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then
-                                    !Flag(i,j) = 0.0d0
                                 else
-                                    !write(*,*)i,j,theta*180/PI,VnL,cL,VnR,cR
-                                    !if(i<50)then
-                                    !write(*,*)i,j,theta*180.0d0/PI,VnL,cL,VnR,cR
-                                    !endif
                                     call switchEnable(Nx,Ny,is_SF_xi,is_SF_eta,i,j)
-                                    !Flag(i,j) = 1.0d0
                                 endif
                             endif
                         endif
@@ -283,14 +160,9 @@ endif
                             if(v1 < 0.0d0)then
                                 if((VnL - cL > 0 .and. VnR - cR < 0) .or. (VnL + cL > 0 .and. VnR + cR <0))then!Compresible sonic point
                                     if(sqrt(u1**2.0d0 + v1**2.0d0) < sqrt(u2**2.0d0 + v2**2.0d0))then!NOT accerelation
-                                        !Flag(i,j) = 0.0d0
                                     else
                                         if(theta < 0.0d0)then 
-                                        !if(i<50)then
-                                        !write(*,*)i,j,theta*180.0d0/PI,VnL,cL,VnR,cR
-                                        !endif
-                                        call switchEnable(Nx,Ny,is_SF_xi,is_SF_eta,i,j)
-                                        !Flag(i,j) = 1.0d0
+                                            call switchEnable(Nx,Ny,is_SF_xi,is_SF_eta,i,j)
                                         endif
                                        
                                     endif
@@ -298,14 +170,10 @@ endif
                             else
                                 if((VnR - cR > 0 .and. VnL - cL < 0) .or. (VnR + cR > 0 .and. VnL + cL <0))then!Compresible sonic point
                                     if(sqrt(u1**2.0d0 + v1**2.0d0) > sqrt(u2**2.0d0 + v2**2.0d0))then!NOT accerelation
-                                        !Flag(i,j) = 0.0d0
+                                        
                                     else
                                         if(theta > 0.0d0)then
-                                        !if(i<50)then
-                                        !write(*,*)i,j,theta*180.0d0/PI,VnL,cL,VnR,cR
-                                        !endif
-                                        call switchEnable(Nx,Ny,is_SF_xi,is_SF_eta,i,j)
-                                        !Flag(i,j) = 1.0d0
+                                            call switchEnable(Nx,Ny,is_SF_xi,is_SF_eta,i,j)
                                         endif
                                         
                                     endif
@@ -315,7 +183,6 @@ endif
                         endif
                     enddo
                 else
-                    !Flag(i,j) = 1.0d0
                 endif
 1001 CONTINUE
             enddo
@@ -346,7 +213,6 @@ endif
                 c   = sqrt(GAMMA*p/rho)
                 Cxi = 1.0d0/S(i,j)*(abs(U1) + c*sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0))
                 Ceta = 1.0d0/S(i,j)*(abs(U2) + c*sqrt(n(i,j,1)**2.0d0 + n(i,j,2)**2.0d0))
-                !write(*,*)sqrt(m(i,j,1)**2.0d0 + m(i,j,2)**2.0d0),m(i,j,1),m(i,j,2)
 
                 if(CxiMax < Cxi)then
                     CxiMax = Cxi

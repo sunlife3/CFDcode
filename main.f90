@@ -16,18 +16,22 @@ program main
     implicit none
     integer :: Nx,Ny,i=0,j=0,k=0,time=0,GridNum=11,index=1,Qbin=100,Grid=12,argidx=1
     integer,allocatable :: is_SF_xi(:,:),is_SF_eta(:,:)
-    character filenameraw*128,resfile*64,meshfile*64,filename*128,argc*64
+    character filenameraw*128,resfile*64,meshfile*64,filename*64,argc*16, argc2*8
     real(8),allocatable :: Q(:,:,:),Qn(:,:,:),Qast(:,:,:),E(:,:,:),F(:,:,:),E1(:,:,:),F1(:,:,:),E2(:,:,:),F2(:,:,:),&
                            S(:,:),Ev(:,:,:),Fv(:,:,:)
-    real(8),allocatable :: m(:,:,:),n(:,:,:),X(:,:),Y(:,:)!,is_SF_xi(:,:),is_SF_eta(:,:)
-    real(8) dt,qmax
+    real(8),allocatable :: m(:,:,:),n(:,:,:),X(:,:),Y(:,:)
+    real(8) dt,qmax,inFlowM
     real(8) :: elapsedTime=0.0d0,Q1old=0.0d0,res=0.0d0,ressum=0.0d0,piyo=0.0d0,timelimit=0.5d0
 
-    call getarg(argidx,argc)
-    write(*,*)argc
-    !!!!!!!!!!!!!! Grid Read !!!!!!!!!!!!!!!!!!!!!!
+    call getarg(1,argc)
+    call getarg(2, argc2)
+    read(argc2,*)inFlowM
+    call getarg(3, filename)
+    write(*,*)argc, inFlowM, filename
+    !!!!!!!!!!!!!! Mesh Read !!!!!!!!!!!!!!!!!!!!!!
     if(argc == "SNS")then
-        meshfile = 'MESH_tube(5025).txt'
+        !meshfile = 'MESH_tube(5025).txt'
+        meshfile = 'Gridtube.txt'
         timelimit = 40.0d0
         !meshfile = 'MESH_Tube_Buff(100025).txt'
     else if(argc == "Bow")then
@@ -43,12 +47,11 @@ program main
         timelimit = 1.0d0
         !meshfile = 'MESH_ductGridM15(100100).txt'
     else if(argc == "visplate")then
-        meshfile = 'MESH_VisPlateM5.txt'
-        !meshfile = 'MESH_GridVisPlate.txt'
+        !meshfile = 'MESH_VisPlateM5.txt'
+        meshfile = 'MESH_GridVisPlate.txt'
         timelimit = 20.0d0
         !meshfile = 'MESH_ductGridM15(100100).txt'
     else
-        !open(Grid,file = 'MESH_TaperGridM15(100100).txt')
         !open(Grid,file = 'MESH_GridVisPlate.txt')
         !open(Grid,file = 'MESH_OddEven(35019).txt')
         !meshfile = 'MESH_SOTube(500020).txt'
@@ -73,17 +76,15 @@ program main
     enddo
     close(Grid)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    call setInitCond(Q,Nx,Ny,X,Y,argc)
+     call setInitCond(Q,Nx,Ny,X,Y,argc)
     !call output2file(Q,Nx,Ny,index,meshfile)
     !index = index + 1
     call setMetrics(m,n,S,Nx,Ny,X,Y)
     
 
-    do !time=0,0
-        
+    do time=0,10       
         call setbdycond(Q,m,n,Nx,Ny,is_SF_xi,argc)
-        !call detectSonicPoint(Q,Nx,Ny,is_SF_xi,is_SF_eta)
-        !call ShockDetection(Q,Nx,Ny,is_SF_xi,is_SF_eta,X,Y)
+        call ShockDetection(Q,Nx,Ny,is_SF_xi,is_SF_eta,X,Y)
         call evalFlux(Q,E,F,E1,E2,F1,F2,m,n,Nx,Ny,is_SF_xi,is_SF_eta)
         !call Xviscflux(Q,Ev,m,n,S,Nx,Ny)
         !call YviscFlux(Q,Fv,m,n,S,Nx,Ny)
@@ -96,7 +97,7 @@ program main
                 do k=1,4
                     Qn(i,j,k) = Q(i,j,k)
                     Qast(i,j,k) = Qn(i,j,k) - 0.50d0*(dt/S(i,j))*((E(i,j,k)-E(i-1,j,k) + F(i,j,k)-F(i,j-1,k)))! &      
-                                                        !- (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re) 
+                                        !- (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re) ! When solving N.S. eq 
                 enddo
             enddo
         enddo
@@ -111,7 +112,7 @@ program main
                 Q1old = Qn(i,j,1)
                 do k=1,4
                     Q(i,j,k) = Qn(i,j,k) - (dt/S(i,j))*((E(i,j,k)-E(i-1,j,k) + F(i,j,k)-F(i,j-1,k)))! & 
-                                                        !- (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re)
+                                    !- (Ev(i,j,k)-Ev(i-1,j,k))/Re - (Fv(i,j,k)-Fv(i,j-1,k))/Re) ! When solving N.S. eq 
                 enddo
                 res = abs(Q(i,j,1) - Q1old)
                 ressum = ressum + res
@@ -120,12 +121,14 @@ program main
         ressum = ressum/(Nx*Ny)
         elapsedTime = elapsedTime + dt
         
+        !!!!!!!!!!!  Output TimeSeries data !!!!!!!!!!!
         !if(1.0d0*index < elapsedtime)then
         !    !call print_profile(Q,Nx,Ny,index)
         !    call output2file(Q,Nx,Ny,index,meshfile)
         !    index = index + 1
         !    !piyo = piyo + 0.006d0
         !endif
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         write(*,*)elapsedTime,',',ressum
         
@@ -157,7 +160,7 @@ program main
         enddo
     enddo
 
-    call output2file(Q,Nx,Ny,index,meshfile)
+    call output2file(Q,Nx,Ny,index,meshfile,argc,inFlowM, filename, elapsedTime)
     !call pltdist(Q,Nx,Ny,meshfile)
 
     deallocate(Q,E,F,S,m,n,Ev,Fv,X,Y)
