@@ -61,18 +61,88 @@ contains
                 print *,"pause 0.1"
             end if
         enddo
-   
     end subroutine AnimationScript
 
-    subroutine output2file(Q,Nx,Ny,index,meshfile)
+    subroutine output2file(Q,Nx,Ny,index,meshfile,argc,inFlowM,filename, elapsedTime)
         implicit none
         integer,intent(in) :: Nx,Ny,index
-        integer :: fo=20,i=0,j=0,Grid=19
+        integer :: fo=20, fo2=21, i=0,j=0,Grid=19,Serial=0
         real(8),intent(in) :: Q(-2:Nx+3,-2:Ny+3,4)
-        character filename*128
-        character,intent(in) :: meshfile*64
+        character,intent(in) :: meshfile*64,filename*64, argc*16
+        character jsonFile*64, rawFile*64
+        real(8),intent(in) :: inFlowM, elapsedTime
+        
+        !!!!!!!!!!!!!!!!!!!!!!! meta data 1!!!!!!!!!!!!!!!!!!!!!!
+        write(jsonFile,'(a,i3.3,a)')trim(filename), index, '.json'
+        open(fo2,file = jsonFile)
+        write(fo2,*) '{'
+        !write(*,'(a,i2,a)')'"test" : "',a, '"'
+        write(fo2,'(a,i3.3,a)') '   "XGridNum" : "', Nx, '",'
+        write(fo2,'(a,i3.3,a)') '   "YGridNum" : "', Ny, '",'
+        write(fo2,'(a,a,a)')   '   "MeshFile" : "', trim(meshfile), '",'
+        write(fo2,'(a,a,a)')   '   "ResultFile:" : "', trim(filename), '",'
+        write(fo2,'(a,f3.1,a)') '   "InflowMach:" : "', inFlowM, '",'
+        if(argc == "SNS")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "Steady Normal Shock",'
+        else if(argc == "ramp")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "None",'
+        else if(argc == "Bow")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "RightSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "Bow shock",'
+        else if(argc == "PS")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "Propagating ShockWave",'
+        else if(argc == "SO")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "Shu-Osher shock tube test",'
+        else if(argc == "SOD")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "Reflection",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "SOD shock tube test",'
+        else if(argc == "LAX")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "LAX shock tuve test",'
+        else if(argc == "visplate")then
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Viscous isothermal wall",'
+            write(fo2,'(a,a)')  '   "Test:" : "Laminar boundary layer with flat plate",'
+        else if(argc == "SWBLI")then
+            write(fo2,'(a,a)')  '   "RightSideBoundary:" : "Reflection",'
+            write(fo2,'(a,a)')  '   "LeftSideBoundary:" : "Reflection",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Viscous isothermal wall",'
+            write(fo2,'(a,a)')  '   "Viscousity:" : "Same as inflow",'
+            write(fo2,'(a,a)')  '   "Test:" : "Viscous shock tube",'
+        else if(argc == "DMR")then
+            !Double Mach Reflection
+            write(fo2,'(a,a)')  '   "OutFlow:" : "FreeOutFlow",'
+            write(fo2,'(a,a)')  '   "UpperSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "DownSideBoundary:" : "Slip",'
+            write(fo2,'(a,a)')  '   "Test:" : "Double Mach Reflection",'
+        endif 
 
-        write(filename,'("Qbin HLL Cylinder(M20,100,30deg)_",i3.3,".dat")')index
+        write(fo2,'(a,f3.1,a)') '   "elapsedTime:" : "', elapsedTime, '",'
+        write(fo2,'(a,a)')      '   "Equation:" : "Euler"'
+        write(fo2,*)'}'
+        close(fo2)
+
+        !!!!!!!!!!!!!!!!!!!!!!!!! raw data !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !write(filename,'("Qbin HLL Cylinder(M20,100,30deg)_",i3.3,".dat")')index
         !write(filename,'("QbinSLAU2 SNS(M20,i=40,1st)_",i3.3,".dat")')index
         !write(filename,'("Qbin_HLL(WCNS)_ramp5deg(M15,100)_",i1.1,".dat")')index 
         !write(filename,'("Qbin_duct5deg(M15,100,60)_",i1.1,".dat")')index
@@ -83,9 +153,9 @@ contains
         !write(filename,'("Qbin_AUSM_BoundaryLayer2(M5)_",i2.2,".dat")')index
         !write(filename,'("CSP.dat")')
         !write(filename,'("Qbin_SWBLI(HLLAUSM,3000,Re1000)_",i2.2,".dat")')index
-        !open(fo,file='Qbin.dat')
-        open(fo,file = filename)
-        write(fo,*)meshfile
+        write(rawFile, '(a,"_",i3.3,a)')trim(filename), index, ".dat"
+        open(fo,file = rawFile)
+        !write(fo,*)meshfile
         do j=-2,Ny+3
             do i=-2,Nx+3
                 write(fo,*)Q(i,j,1),Q(i,j,2),Q(i,j,3),Q(i,j,4)
